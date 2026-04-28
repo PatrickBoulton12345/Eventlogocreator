@@ -9,7 +9,13 @@ Make on-brand Instagram posts (1080 × 1350 px) for LFG chapter events. Pick an 
 - **Pub Meeting** — orange background, black stacked wordmark, cream details box. Warm, social.
 - **Custom** — slimmed-down cream layout for any event type the chapter wants to run. Type in your own headline (1–3 words).
 
-Every post includes the chapter name, the event type, the location, the date, and the time. Optional: sign-up link, contact email, and Instagram / Facebook / TikTok / LinkedIn handles.
+Every post includes the chapter name, the event type, the location, the date, and the time. Optional: sign-up link, contact email, and Instagram / Facebook / TikTok / LinkedIn / X handles.
+
+## Import from Luma
+
+Paste a Luma event URL at the top of the form and hit **Import** to auto-fill the location, date, time, and sign-up link. If any of those fields are already filled, the app shows a confirmation modal listing exactly what will be overwritten before applying. The chapter name, socials, and event type are never overwritten — those stay the user's choice.
+
+The import is powered by a small Next.js API route at `app/api/luma/route.ts` that fetches the public Luma page server-side (avoids CORS), parses the embedded JSON-LD `Event` schema, and falls back to OpenGraph meta tags if needed.
 
 ## Run it locally
 

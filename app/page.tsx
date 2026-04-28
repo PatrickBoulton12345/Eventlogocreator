@@ -4,6 +4,7 @@ import { useState } from "react";
 import { EMPTY_POST, type PostData } from "@/lib/types";
 import { EventForm } from "@/components/EventForm";
 import { PostPreview } from "@/components/PostPreview";
+import { LumaImport } from "@/components/LumaImport";
 import { LfgWordmark } from "@/components/Wordmark";
 
 export default function Home() {
@@ -37,7 +38,8 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(380px,_1fr)_minmax(420px,_540px)] gap-10">
-          <section>
+          <section className="flex flex-col gap-6">
+            <LumaImport data={data} onChange={setData} />
             <EventForm data={data} onChange={setData} />
           </section>
           <section className="lg:sticky lg:top-6 lg:self-start">
