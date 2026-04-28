@@ -148,6 +148,13 @@ export function EventForm({ data, onChange }: Props) {
               placeholder="lfg-manchester"
             />
           </Field>
+          <Field label="X (Twitter)">
+            <SocialInput
+              value={data.socials.twitter}
+              onChange={(v) => setSocial("twitter", v)}
+              placeholder="lfgmanchester"
+            />
+          </Field>
         </div>
       </Section>
     </div>

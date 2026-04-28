@@ -15,6 +15,7 @@ const sample = (type: EventType, customLabel = ""): PostData => ({
     facebook: "lfgmanchester",
     tiktok: "lfgmanchester",
     linkedin: "lfg-manchester",
+    twitter: "lfgmanchester",
   },
 });
 

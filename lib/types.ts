@@ -12,6 +12,7 @@ export type Socials = {
   facebook: string;
   tiktok: string;
   linkedin: string;
+  twitter: string;
 };
 
 export type PostData = {
@@ -35,7 +36,7 @@ export const EMPTY_POST: PostData = {
   time: "",
   signupUrl: "",
   email: "",
-  socials: { instagram: "", facebook: "", tiktok: "", linkedin: "" },
+  socials: { instagram: "", facebook: "", tiktok: "", linkedin: "", twitter: "" },
 };
 
 export function getEventTypeLabel(data: PostData): string {
