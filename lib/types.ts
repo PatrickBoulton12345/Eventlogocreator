@@ -93,5 +93,5 @@ export function buildExportFilename(data: PostData): string {
       ? data.customEventLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")
       : data.eventType;
   const date = data.date || "tbc";
-  return `${chapter}-${type}-${date}.png`;
+  return `${chapter}-${type}-${date}.jpg`;
 }

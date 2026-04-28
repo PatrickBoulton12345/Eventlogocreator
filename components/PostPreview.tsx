@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { toPng } from "html-to-image";
+import { toJpeg } from "html-to-image";
 import { Poster } from "./Poster";
 import {
   buildExportFilename,
@@ -40,11 +40,12 @@ export function PostPreview({ data }: Props) {
     if (!posterRef.current || !canDownload) return;
     setDownloading(true);
     try {
-      const dataUrl = await toPng(posterRef.current, {
+      const dataUrl = await toJpeg(posterRef.current, {
         width: POSTER_WIDTH,
         height: POSTER_HEIGHT,
         pixelRatio: 1,
         cacheBust: true,
+        quality: 0.95,
         style: { transform: "none" },
       });
       const link = document.createElement("a");
@@ -105,7 +106,7 @@ export function PostPreview({ data }: Props) {
               : "bg-black/10 text-black/40 cursor-not-allowed")
           }
         >
-          {downloading ? "Exporting…" : "Download PNG"}
+          {downloading ? "Exporting…" : "Download JPG"}
         </button>
         {!canDownload && (
           <div className="rounded-md border-2 border-[#FE5500]/40 bg-[#FE5500]/5 p-3 text-sm text-black/75 font-body">

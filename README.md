@@ -1,6 +1,6 @@
 # LFG Event Post Creator
 
-Make on-brand Instagram posts (1080 × 1350 px) for LFG chapter events. Pick an event style, fill in the details, download a PNG.
+Make on-brand Instagram posts (1080 × 1350 px) for LFG chapter events. Pick an event style, fill in the details, download a JPG.
 
 ## Event styles
 
@@ -40,7 +40,7 @@ The brand bible PDF is included in the repo root for reference.
 
 - Next.js 16 + React 19 + TypeScript
 - Tailwind 4 (CSS-first config)
-- `html-to-image` for PNG export at exact 1080 × 1350 px
+- `html-to-image` for JPG export at exact 1080 × 1350 px
 
 ## Adding a new event style
 
