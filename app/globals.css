@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Octarine';
+  src: url('/fonts/Octarine-Bold.woff2') format('woff2'),
+       url('/fonts/Octarine-Bold.woff') format('woff'),
+       url('/fonts/Octarine-Bold.otf') format('opentype'),
+       url('/fonts/Octarine-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Octarine';
+  src: url('/fonts/Octarine-Light.woff2') format('woff2'),
+       url('/fonts/Octarine-Light.woff') format('woff'),
+       url('/fonts/Octarine-Light.otf') format('opentype'),
+       url('/fonts/Octarine-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme inline {
+  --color-lfg-black: #000000;
+  --color-lfg-orange: #FE5500;
+  --color-lfg-yellow: #EE9944;
+  --color-lfg-blue: #79CAC4;
+  --color-lfg-cream: #EBE3D0;
+
+  --font-headline: 'Octarine', var(--font-space-grotesk), system-ui, sans-serif;
+  --font-body: var(--font-dm-sans), system-ui, sans-serif;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: #f5f1e8;
+  color: #000000;
+}
+
+.font-headline {
+  font-family: var(--font-headline);
+  letter-spacing: -0.02em;
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
