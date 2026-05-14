@@ -1,9 +1,9 @@
-export type EventType = "hackathon" | "litter-pick" | "pub-meeting" | "custom";
+export type EventType = "hackathon" | "litter-pick" | "pub-social" | "custom";
 
 export const EVENT_TYPES: { value: EventType; label: string }[] = [
   { value: "hackathon", label: "Hackathon" },
   { value: "litter-pick", label: "Litter Pick" },
-  { value: "pub-meeting", label: "Pub Meeting" },
+  { value: "pub-social", label: "Pub Social" },
   { value: "custom", label: "Custom" },
 ];
 
@@ -45,7 +45,7 @@ export function getEventTypeLabel(data: PostData): string {
   }
   if (data.eventType === "hackathon") return "hackathon";
   if (data.eventType === "litter-pick") return "litter pick";
-  return "pub meeting";
+  return "pub social";
 }
 
 export function validate(data: PostData): string[] {

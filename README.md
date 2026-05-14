@@ -6,7 +6,7 @@ Make on-brand Instagram posts (1080 × 1350 px) for LFG chapter events. Pick an 
 
 - **Hackathon** — black background, big orange wordmark, "progressing" bar motif. Energetic, builder feel.
 - **Litter Pick** — cream background, blue stacked wordmark, fill bars across the top. Civic, clean.
-- **Pub Meeting** — orange background, black stacked wordmark, cream details box. Warm, social.
+- **Pub Social** — orange background, black stacked wordmark, cream details box. Warm, social.
 - **Custom** — slimmed-down cream layout for any event type the chapter wants to run. Type in your own headline (1–3 words).
 
 Every post includes the chapter name, the event type, the location, the date, and the time. Optional: sign-up link, contact email, and Instagram / Facebook / TikTok / LinkedIn / X handles.

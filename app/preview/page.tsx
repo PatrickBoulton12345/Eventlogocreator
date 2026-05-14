@@ -23,7 +23,7 @@ export default function Preview() {
   const samples: { label: string; data: PostData }[] = [
     { label: "Hackathon", data: sample("hackathon") },
     { label: "Litter Pick", data: sample("litter-pick") },
-    { label: "Pub Meeting", data: sample("pub-meeting") },
+    { label: "Pub Social", data: sample("pub-social") },
     { label: "Custom (growth summit)", data: sample("custom", "growth summit") },
   ];
 

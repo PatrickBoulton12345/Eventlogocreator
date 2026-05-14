@@ -8,10 +8,10 @@ import { LfgWordmark } from "@/components/Wordmark";
 import { SocialIcons } from "@/components/SocialIcons";
 import { PosterFrame, fitWordmark, splitWords } from "./PosterFrame";
 
-export function PubMeetingPoster({ data }: { data: PostData }) {
+export function PubSocialPoster({ data }: { data: PostData }) {
   const date = formatDateForDisplay(data.date);
   const time = formatTimeForDisplay(data.time);
-  const lines = splitWords("pub meeting");
+  const lines = splitWords("pub social");
   const wordmarkSize = fitWordmark(lines, 920, 250);
 
   return (
