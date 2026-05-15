@@ -6,12 +6,14 @@ import { EventForm } from "@/components/EventForm";
 import { PostPreview } from "@/components/PostPreview";
 import { LumaImport } from "@/components/LumaImport";
 import { LfgWordmark } from "@/components/Wordmark";
+import { UpdateBanner } from "@/components/UpdateBanner";
 
 export default function Home() {
   const [data, setData] = useState<PostData>(EMPTY_POST);
 
   return (
     <main className="min-h-screen flex flex-col">
+      <UpdateBanner />
       <header className="border-b-2 border-black/10 bg-[#EBE3D0]">
         <div className="max-w-[1400px] mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
