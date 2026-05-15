@@ -1,11 +1,13 @@
 "use client";
 
+import { useRef } from "react";
 import {
   EVENT_TYPES,
   type EventType,
   type PostData,
   type Socials,
 } from "@/lib/types";
+import { findChapterSocials } from "@/lib/chapters";
 
 type Props = {
   data: PostData;
@@ -13,11 +15,45 @@ type Props = {
 };
 
 export function EventForm({ data, onChange }: Props) {
+  // Remembers what we last auto-filled for instagram / twitter so we only
+  // overwrite our own autofill — never a value the organiser typed by hand.
+  const autofilled = useRef<{ instagram: string; twitter: string }>({
+    instagram: "",
+    twitter: "",
+  });
+
   const set = <K extends keyof PostData>(key: K, value: PostData[K]) =>
     onChange({ ...data, [key]: value });
 
-  const setSocial = (key: keyof Socials, value: string) =>
+  const setSocial = (key: keyof Socials, value: string) => {
+    // If the organiser edits Instagram or Twitter by hand, stop treating
+    // that value as ours so a later chapter change won't replace it.
+    if (key === "instagram" || key === "twitter") {
+      autofilled.current[key] = value;
+    }
     onChange({ ...data, socials: { ...data.socials, [key]: value } });
+  };
+
+  const setChapter = (value: string) => {
+    const match = findChapterSocials(value);
+    let nextSocials = data.socials;
+
+    if (match) {
+      const tryFill = (key: "instagram" | "twitter", incoming?: string) => {
+        if (!incoming) return;
+        const current = nextSocials[key];
+        // Only fill if the field is empty or still holds our last autofill.
+        if (current === "" || current === autofilled.current[key]) {
+          nextSocials = { ...nextSocials, [key]: incoming };
+          autofilled.current[key] = incoming;
+        }
+      };
+      tryFill("instagram", match.instagram);
+      tryFill("twitter", match.twitter);
+    }
+
+    onChange({ ...data, chapter: value, socials: nextSocials });
+  };
 
   return (
     <div className="font-body flex flex-col gap-8">
@@ -59,11 +95,15 @@ export function EventForm({ data, onChange }: Props) {
       )}
 
       <Section title="The basics">
-        <Field label="Chapter name" required>
+        <Field
+          label="Chapter name"
+          required
+          hint="Type your chapter (e.g. LFG Reading) — Instagram and X handles fill in automatically if we have them on file."
+        >
           <input
             type="text"
             value={data.chapter}
-            onChange={(e) => set("chapter", e.target.value)}
+            onChange={(e) => setChapter(e.target.value)}
             placeholder="e.g. LFG Manchester"
             className={inputCx}
           />
