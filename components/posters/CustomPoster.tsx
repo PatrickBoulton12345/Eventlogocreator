@@ -14,7 +14,10 @@ export function CustomPoster({ data }: { data: PostData }) {
   const time = formatTimeForDisplay(data.time);
   const headline = getEventTypeLabel(data);
   const lines = splitWords(headline);
-  const fontSize = fitWordmark(lines, 920, 240);
+  // Cap by width, then by the 560px of vertical space above the details
+  // block, so multi-line names never overlap the when/where rows.
+  const maxByHeight = Math.floor(560 / (0.88 * Math.max(lines.length, 1)));
+  const fontSize = Math.min(fitWordmark(lines, 920, 240), maxByHeight);
 
   return (
     <PosterFrame background={BRAND_COLORS.CREAM} color={BRAND_COLORS.BLACK}>

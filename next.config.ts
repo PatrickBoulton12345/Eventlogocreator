@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
+  devIndicators: false,
 };
 
 export default nextConfig;

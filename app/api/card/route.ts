@@ -1,0 +1,126 @@
+import type { NextRequest } from "next/server";
+import { existsSync } from "node:fs";
+import { fetchLumaEvent } from "@/lib/luma-server";
+import { buildCardData } from "@/lib/autofill";
+import { buildExportFilename, getEventTypeLabel } from "@/lib/types";
+
+// GET /api/card?luma=<lu.ma or luma.com link>
+// Fetches the event details from Luma, fills in the card automatically,
+// renders it in a headless browser, and returns the finished 1080×1350
+// JPEG. This is what the Google Docs automation calls.
+
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
+const LOCAL_BROWSERS = [
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+  "/Applications/Chromium.app/Contents/MacOS/Chromium",
+];
+
+async function launchBrowser() {
+  const puppeteer = await import("puppeteer-core");
+
+  if (process.env.VERCEL) {
+    const chromium = (await import("@sparticuz/chromium")).default;
+    return puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    });
+  }
+
+  const local =
+    process.env.CHROME_PATH || LOCAL_BROWSERS.find((p) => existsSync(p));
+  if (!local) {
+    throw new Error(
+      "No local Chrome/Edge found for rendering; set CHROME_PATH",
+    );
+  }
+  return puppeteer.launch({ executablePath: local, headless: true });
+}
+
+export async function GET(req: NextRequest) {
+  const lumaUrl = req.nextUrl.searchParams.get("luma")?.trim();
+  if (!lumaUrl) {
+    return Response.json(
+      { error: "Missing luma parameter, e.g. /api/card?luma=https://luma.com/..." },
+      { status: 400 },
+    );
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(lumaUrl);
+  } catch {
+    return Response.json(
+      { error: "That doesn't look like a valid URL" },
+      { status: 400 },
+    );
+  }
+
+  const result = await fetchLumaEvent(parsed).catch(() => null);
+  if (!result) {
+    return Response.json({ error: "Failed to reach Luma" }, { status: 502 });
+  }
+  if ("error" in result) {
+    return Response.json({ error: result.error }, { status: result.status });
+  }
+
+  const data = buildCardData(result.event);
+
+  // Optional manual overrides, e.g. &chapter=LFG Leeds&type=hackathon
+  const overrideChapter = req.nextUrl.searchParams.get("chapter")?.trim();
+  if (overrideChapter) data.chapter = overrideChapter;
+  const overrideType = req.nextUrl.searchParams.get("type")?.trim();
+  if (
+    overrideType === "hackathon" ||
+    overrideType === "litter-pick" ||
+    overrideType === "pub-social" ||
+    overrideType === "custom"
+  ) {
+    data.eventType = overrideType;
+    if (overrideType === "custom" && !data.customEventLabel) {
+      data.customEventLabel = result.event.name.toLowerCase();
+    }
+  }
+
+  const encoded = Buffer.from(JSON.stringify(data), "utf8").toString(
+    "base64url",
+  );
+  const renderUrl = `${req.nextUrl.origin}/render?d=${encoded}`;
+
+  let browser;
+  try {
+    browser = await launchBrowser();
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1080, height: 1350, deviceScaleFactor: 1 });
+    await page.goto(renderUrl, { waitUntil: "networkidle0", timeout: 30000 });
+    await page.evaluate(() => document.fonts.ready);
+
+    const jpeg = await page.screenshot({
+      type: "jpeg",
+      quality: 92,
+      clip: { x: 0, y: 0, width: 1080, height: 1350 },
+    });
+
+    const filename = buildExportFilename(data);
+    return new Response(Buffer.from(jpeg), {
+      headers: {
+        "Content-Type": "image/jpeg",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "X-Event-Name": encodeURIComponent(result.event.name),
+        "X-Event-Type": getEventTypeLabel(data),
+        "X-Event-Date": data.date,
+      },
+    });
+  } catch (err) {
+    console.error("Card render error:", err);
+    return Response.json(
+      { error: "Failed to render the card image" },
+      { status: 500 },
+    );
+  } finally {
+    await browser?.close().catch(() => {});
+  }
+}

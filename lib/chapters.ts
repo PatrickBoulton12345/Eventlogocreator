@@ -43,7 +43,7 @@ const CHAPTERS: ChapterEntry[] = [
   },
   {
     name: "West Midlands",
-    keywords: ["west midlands"],
+    keywords: ["west midlands", "west mids"],
     socials: { instagram: "lfg_west_midlands", twitter: "LFG_WM" },
   },
   {
@@ -156,6 +156,22 @@ function normalise(input: string): string {
 function matchesKeyword(haystack: string, keyword: string): boolean {
   const pattern = new RegExp(`(?:^|\\s)${keyword.replace(/\s+/g, "\\s+")}(?:\\s|$)`);
   return pattern.test(haystack);
+}
+
+// Returns the canonical chapter name (e.g. "West Midlands") if the input
+// mentions a known chapter, otherwise null.
+export function findChapterName(input: string): string | null {
+  const cleaned = normalise(input);
+  if (!cleaned) return null;
+
+  for (const entry of CHAPTERS) {
+    for (const keyword of entry.keywords) {
+      if (matchesKeyword(cleaned, keyword)) {
+        return entry.name;
+      }
+    }
+  }
+  return null;
 }
 
 export function findChapterSocials(chapterName: string): ChapterSocials | null {
