@@ -83,6 +83,13 @@ export function formatTimeForDisplay(time: string): string {
   return `${displayHour}:${m.toString().padStart(2, "0")}${period}`;
 }
 
+export function formatWhen(date: string, time: string): string {
+  if (date && time) return `${date} • ${time}`;
+  if (date) return date;
+  if (time) return time;
+  return "date • time";
+}
+
 export function buildExportFilename(data: PostData): string {
   const chapter = (data.chapter || "lfg")
     .toLowerCase()

@@ -1,4 +1,5 @@
 import {
+  formatWhen,
   formatDateForDisplay,
   formatTimeForDisplay,
   getEventTypeLabel,
@@ -97,7 +98,7 @@ export function CustomPoster({ data }: { data: PostData }) {
           gap: 24,
         }}
       >
-        <Row label="when" value={`${date || "date"} • ${time || "time"}`} />
+        <Row label="when" value={`${formatWhen(date, time)}`} />
         <Row label="where" value={data.location || "your location"} />
         {data.signupUrl && <Row label="sign up" value={data.signupUrl} smallValue />}
       </div>

@@ -70,8 +70,15 @@ export async function GET(req: NextRequest) {
   const data = buildCardData(result.event);
 
   // Optional manual overrides, e.g. &chapter=LFG Leeds&type=hackathon
+  // &date=2026-07-30&time=18:30&location=The Red Deer, Sheffield
   const overrideChapter = req.nextUrl.searchParams.get("chapter")?.trim();
   if (overrideChapter) data.chapter = overrideChapter;
+  const overrideDate = req.nextUrl.searchParams.get("date")?.trim();
+  if (overrideDate) data.date = overrideDate;
+  const overrideTime = req.nextUrl.searchParams.get("time")?.trim();
+  if (overrideTime) data.time = overrideTime;
+  const overrideLocation = req.nextUrl.searchParams.get("location")?.trim();
+  if (overrideLocation) data.location = overrideLocation;
   const overrideType = req.nextUrl.searchParams.get("type")?.trim();
   if (
     overrideType === "hackathon" ||

@@ -1,4 +1,5 @@
 import {
+  formatWhen,
   formatDateForDisplay,
   formatTimeForDisplay,
   type PostData,
@@ -96,7 +97,7 @@ export function LitterPickPoster({ data }: { data: PostData }) {
           label="when"
           accent={BRAND_COLORS.ORANGE}
           textColor={BRAND_COLORS.BLACK}
-          big={`${date || "date"} • ${time || "time"}`}
+          big={`${formatWhen(date, time)}`}
         />
         <DetailRow
           label="where"
