@@ -47,10 +47,14 @@ export function buildCardData(imported: LumaImported): PostData {
 
   // For custom events (e.g. "LFG Summer Party") the whole name is the
   // headline, so only claim a chapter if the name mentions a known one.
+  // Prefer the official chapter name when the event name mentions one
+  // (e.g. "LFG Westminster: Monthly Pub Social" → "LFG Westminster").
+  const known = findChapterName(imported.name || "");
   let chapter: string;
-  if (type === "custom") {
-    const known = findChapterName(imported.name || "");
-    chapter = known ? `LFG ${known}` : "LFG";
+  if (known) {
+    chapter = `LFG ${known}`;
+  } else if (type === "custom") {
+    chapter = "LFG";
   } else {
     chapter = inferChapter(imported.name || "", type);
   }
