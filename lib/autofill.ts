@@ -42,6 +42,13 @@ function inferChapter(name: string, type: EventType): string {
   return `LFG ${rest}`;
 }
 
+function normaliseLocation(location: string): string {
+  if (!location.trim() || /^tbc$/i.test(location.trim())) {
+    return "venue tbc";
+  }
+  return location;
+}
+
 export function buildCardData(imported: LumaImported): PostData {
   const { type, label } = inferEventType(imported.name || "");
 
@@ -65,8 +72,9 @@ export function buildCardData(imported: LumaImported): PostData {
     eventType: type,
     customEventLabel: label,
     chapter,
-    // Some Luma pages only reveal the venue after signing up.
-    location: imported.location || "venue on the sign-up page",
+    // Some Luma pages only reveal the venue after signing up, or the
+    // organiser has literally typed "tbc" as the location.
+    location: normaliseLocation(imported.location),
     date: imported.date,
     time: imported.time,
     signupUrl: imported.signupUrl,
