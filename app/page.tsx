@@ -7,6 +7,7 @@ import { PostPreview } from "@/components/PostPreview";
 import { LumaImport } from "@/components/LumaImport";
 import { LfgWordmark } from "@/components/Wordmark";
 import { UpdateBanner } from "@/components/UpdateBanner";
+import Link from "next/link";
 
 export default function Home() {
   const [data, setData] = useState<PostData>(EMPTY_POST);
@@ -22,8 +23,16 @@ export default function Home() {
               Event Post Creator
             </span>
           </div>
-          <div className="text-xs text-black/55 font-body">
-            1080 × 1350 px · Instagram portrait
+          <div className="flex items-center gap-4">
+            <Link
+              href="/week"
+              className="rounded-md bg-[#FE5500] text-white px-4 py-2 text-sm font-bold hover:bg-[#e04800] transition"
+            >
+              This week&apos;s cards →
+            </Link>
+            <span className="hidden md:inline-block text-xs text-black/55 font-body">
+              1080 × 1350 px · Instagram portrait
+            </span>
           </div>
         </div>
       </header>

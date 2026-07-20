@@ -1,44 +1,16 @@
 import type { NextRequest } from "next/server";
-import { existsSync } from "node:fs";
 import { fetchLumaEvent } from "@/lib/luma-server";
 import { buildCardData } from "@/lib/autofill";
 import { buildExportFilename, getEventTypeLabel } from "@/lib/types";
+import { launchBrowser, renderCardJpeg } from "@/lib/render";
 
 // GET /api/card?luma=<lu.ma or luma.com link>
 // Fetches the event details from Luma, fills in the card automatically,
 // renders it in a headless browser, and returns the finished 1080×1350
-// JPEG. This is what the Google Docs automation calls.
+// JPEG. Optional overrides: &chapter= &type= &date= &time= &location=
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-const LOCAL_BROWSERS = [
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-  "/Applications/Chromium.app/Contents/MacOS/Chromium",
-];
-
-async function launchBrowser() {
-  const puppeteer = await import("puppeteer-core");
-
-  if (process.env.VERCEL) {
-    const chromium = (await import("@sparticuz/chromium")).default;
-    return puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: true,
-    });
-  }
-
-  const local =
-    process.env.CHROME_PATH || LOCAL_BROWSERS.find((p) => existsSync(p));
-  if (!local) {
-    throw new Error(
-      "No local Chrome/Edge found for rendering; set CHROME_PATH",
-    );
-  }
-  return puppeteer.launch({ executablePath: local, headless: true });
-}
 
 export async function GET(req: NextRequest) {
   const lumaUrl = req.nextUrl.searchParams.get("luma")?.trim();
@@ -92,27 +64,13 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const encoded = Buffer.from(JSON.stringify(data), "utf8").toString(
-    "base64url",
-  );
-  const renderUrl = `${req.nextUrl.origin}/render?d=${encoded}`;
-
   let browser;
   try {
     browser = await launchBrowser();
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1080, height: 1350, deviceScaleFactor: 1 });
-    await page.goto(renderUrl, { waitUntil: "networkidle0", timeout: 30000 });
-    await page.evaluate(() => document.fonts.ready);
-
-    const jpeg = await page.screenshot({
-      type: "jpeg",
-      quality: 92,
-      clip: { x: 0, y: 0, width: 1080, height: 1350 },
-    });
+    const jpeg = await renderCardJpeg(browser, data, req.nextUrl.origin);
 
     const filename = buildExportFilename(data);
-    return new Response(Buffer.from(jpeg), {
+    return new Response(new Uint8Array(jpeg), {
       headers: {
         "Content-Type": "image/jpeg",
         "Content-Disposition": `attachment; filename="${filename}"`,
