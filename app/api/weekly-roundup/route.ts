@@ -47,7 +47,13 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Preview may pin the reference date (?today=YYYY-MM-DD) for testing a
+  // specific week; real sends always use the actual date.
+  const todayOverride = req.nextUrl.searchParams.get("today")?.trim();
+  const today =
+    isPreview && todayOverride && /^\d{4}-\d{2}-\d{2}$/.test(todayOverride)
+      ? todayOverride
+      : new Date().toISOString().slice(0, 10);
   const { monday } = weekWindow(today);
   const { thisWeek, comingUp } = splitEvents(events, today);
   const html = buildEmailHtml({ monday, thisWeek, comingUp });
