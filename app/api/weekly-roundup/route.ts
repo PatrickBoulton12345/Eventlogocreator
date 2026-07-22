@@ -59,35 +59,49 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.BREVO_API_KEY;
   const to = process.env.ROUNDUP_TO_EMAIL;
   const from = process.env.ROUNDUP_FROM_EMAIL;
   if (!apiKey || !to || !from) {
     return Response.json(
       {
         error:
-          "Missing email config: set RESEND_API_KEY, ROUNDUP_TO_EMAIL, ROUNDUP_FROM_EMAIL",
+          "Missing email config: set BREVO_API_KEY, ROUNDUP_TO_EMAIL, ROUNDUP_FROM_EMAIL",
       },
       { status: 500 },
     );
   }
 
   try {
-    const { Resend } = await import("resend");
-    const resend = new Resend(apiKey);
-    const { data, error } = await resend.emails.send({
-      from,
-      to,
-      subject,
-      html,
+    const sender = parseAddress(from);
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": apiKey,
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      body: JSON.stringify({
+        sender,
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
     });
-    if (error) {
-      console.error("Resend error:", error);
-      return Response.json({ error: "Email send failed", detail: error }, { status: 502 });
+
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      console.error("Brevo error:", res.status, detail);
+      return Response.json(
+        { error: "Email send failed", status: res.status, detail },
+        { status: 502 },
+      );
     }
+
+    const data = (await res.json().catch(() => ({}))) as { messageId?: string };
     return Response.json({
       sent: true,
-      id: data?.id,
+      id: data.messageId,
       subject,
       thisWeek: thisWeek.length,
       comingUp: comingUp.length,
@@ -96,4 +110,11 @@ export async function GET(req: NextRequest) {
     console.error("Roundup send error:", err);
     return Response.json({ error: "Email send failed" }, { status: 500 });
   }
+}
+
+// Accepts "hi@lfg.uk" or "LFG <hi@lfg.uk>" and returns Brevo's sender shape.
+function parseAddress(value: string): { email: string; name?: string } {
+  const m = value.match(/^\s*(.*?)\s*<\s*(.+?)\s*>\s*$/);
+  if (m) return { name: m[1] || undefined, email: m[2] };
+  return { email: value.trim() };
 }
