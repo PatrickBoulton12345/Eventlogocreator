@@ -7,8 +7,10 @@ export const LFG_CALENDAR_URL = "https://luma.com/lookingforgrowth";
 export type CalendarEvent = {
   name: string;
   startDate: string; // ISO, e.g. 2026-07-21T18:00:00.000+01:00
+  endDate: string; // ISO or ""
   date: string; // YYYY-MM-DD
   url: string;
+  venue: string; // "The Albert, London" or "tbc"
 };
 
 export async function fetchCalendarEvents(
@@ -66,14 +68,60 @@ function findItemList(json: unknown): CalendarEvent[] | null {
       if (!ev) continue;
       const name = typeof ev.name === "string" ? ev.name.trim() : "";
       const startDate = typeof ev.startDate === "string" ? ev.startDate : "";
+      const endDate = typeof ev.endDate === "string" ? ev.endDate : "";
       const url = typeof ev.url === "string" ? ev.url : "";
       if (!name || !url) continue;
-      out.push({ name, startDate, date: startDate.slice(0, 10), url });
+      out.push({
+        name,
+        startDate,
+        endDate,
+        date: startDate.slice(0, 10),
+        url,
+        venue: formatVenue(ev.location),
+      });
     }
     return out;
   }
   if (obj["@graph"]) return findItemList(obj["@graph"]);
   return null;
+}
+
+// Builds a short venue line from a JSON-LD Place: "venue, city", deduped.
+// Returns "tbc" when the organiser hasn't set a real venue yet.
+function formatVenue(location: unknown): string {
+  if (!location || typeof location !== "object") return "tbc";
+  const loc = location as Record<string, unknown>;
+  const name = typeof loc.name === "string" ? loc.name.trim() : "";
+
+  // Some events have address as a plain string (often "tbc").
+  const address = loc.address;
+  const parts: string[] = [];
+  if (name) parts.push(name);
+
+  if (typeof address === "string") {
+    parts.push(address.trim());
+  } else if (address && typeof address === "object") {
+    const a = address as Record<string, unknown>;
+    for (const key of ["streetAddress", "addressLocality"]) {
+      const v = a[key];
+      if (typeof v === "string" && v.trim()) parts.push(v.trim());
+    }
+  }
+
+  const cleaned = dedupe(parts).filter((p) => p.toLowerCase() !== "tbc");
+  return cleaned.length ? cleaned.join(", ") : "tbc";
+}
+
+function dedupe(items: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of items) {
+    const key = item.toLowerCase();
+    if (!item || seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
 }
 
 // Events whose date falls between today and `days` days from now
