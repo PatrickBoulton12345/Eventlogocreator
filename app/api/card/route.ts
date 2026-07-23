@@ -76,6 +76,7 @@ export async function GET(req: NextRequest) {
         "Content-Disposition": `attachment; filename="${filename}"`,
         "X-Event-Name": encodeURIComponent(result.event.name),
         "X-Event-Type": getEventTypeLabel(data),
+        "X-Event-Chapter": encodeURIComponent(data.chapter),
         "X-Event-Date": data.date,
       },
     });
