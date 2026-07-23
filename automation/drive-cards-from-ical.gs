@@ -3,10 +3,10 @@
  *
  * Reads the LFG Luma calendar iCal feed, and for every UPCOMING event builds
  * the event card + Instagram caption on eventlogocreator.vercel.app, then
- * saves them into Google Drive:
+ * saves them into your chosen Google Drive folder (DEST_FOLDER_ID below):
  *
- *   LFG Event Cards / <YYYY-MM-DD> <chapter> / <card>.jpg
- *                                             / <card>.txt   (caption)
+ *   <your folder> / <YYYY-MM-DD> <chapter> / <card>.jpg
+ *                                           / <card>.txt   (caption)
  *
  * It skips events it has already saved, so it's safe to run repeatedly.
  *
@@ -23,7 +23,9 @@
 var ICS_URL =
   "https://api.luma.com/ics/get?entity=calendar&id=cal-RrzxAKUyNdOjqXi";
 var SITE = "https://eventlogocreator.vercel.app";
-var PARENT_FOLDER = "LFG Event Cards";
+// The Drive folder the cards + captions are saved into (from its URL:
+// drive.google.com/drive/folders/<THIS ID>). A dated subfolder is made per event.
+var DEST_FOLDER_ID = "1c-sHjsO9-Ha-faderCgamAvUncdKATKe";
 
 /** Run once to authorise and switch on the weekly run. */
 function setup() {
@@ -48,7 +50,7 @@ function generateDriveCards() {
   var today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  var parent = getOrCreateFolder(PARENT_FOLDER);
+  var parent = DriveApp.getFolderById(DEST_FOLDER_ID);
   var made = 0;
   var errors = [];
 
@@ -170,11 +172,6 @@ function decode(s) {
   } catch (e) {
     return s;
   }
-}
-
-function getOrCreateFolder(name) {
-  var it = DriveApp.getFoldersByName(name);
-  return it.hasNext() ? it.next() : DriveApp.createFolder(name);
 }
 
 function getOrCreateSubfolder(parent, name) {
