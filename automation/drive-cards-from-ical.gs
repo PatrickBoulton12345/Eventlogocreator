@@ -69,7 +69,7 @@ function generateDriveCards() {
 
 /** Fetches one card + caption from the site and saves them to Drive. */
 function createCardFor(ev, parent) {
-  var date = ymd(ev.start);
+  var date = ddmm(ev.start);
 
   var card = UrlFetchApp.fetch(SITE + "/api/card?luma=" + encodeURIComponent(ev.url), {
     muteHttpExceptions: true,
@@ -80,7 +80,10 @@ function createCardFor(ev, parent) {
   }
 
   var headers = card.getHeaders();
-  var chapter = decode(headers["X-Event-Chapter"] || "").replace(/^LFG\s+/i, "");
+  // Vercel serves over HTTP/2, which lower-cases header names, so look the
+  // chapter up case-insensitively (otherwise every event on a date would
+  // share one folder and siblings would be skipped).
+  var chapter = decode(getHeaderCI(headers, "X-Event-Chapter")).replace(/^LFG\s+/i, "");
   var folderName = chapter ? date + " " + chapter : date;
   var folder = getOrCreateSubfolder(parent, folderName);
 
@@ -146,15 +149,25 @@ function extractLumaUrl(block) {
 
 // ---------- helpers ----------
 
-function ymd(d) {
+// Folder date label, e.g. "23.07" (day.month).
+function ddmm(d) {
   var mm = ("0" + (d.getUTCMonth() + 1)).slice(-2);
   var dd = ("0" + d.getUTCDate()).slice(-2);
-  return d.getUTCFullYear() + "-" + mm + "-" + dd;
+  return dd + "." + mm;
+}
+
+// Header lookup that ignores case (HTTP/2 lower-cases header names).
+function getHeaderCI(headers, name) {
+  var want = name.toLowerCase();
+  for (var k in headers) {
+    if (k.toLowerCase() === want) return headers[k] || "";
+  }
+  return "";
 }
 
 function filenameFromHeaders(headers) {
-  var cd = String(headers["Content-Disposition"] || "");
-  var m = cd.match(/filename="([^"]+)"/);
+  var cd = getHeaderCI(headers, "Content-Disposition");
+  var m = String(cd).match(/filename="([^"]+)"/);
   return m ? m[1] : null;
 }
 
