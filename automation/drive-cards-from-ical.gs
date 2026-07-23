@@ -16,8 +16,8 @@
  *  3. In the function dropdown choose "setup", press Run, and approve the
  *     permissions Google asks for (read the calendar feed, write to Drive).
  *     If you see "Google hasn't verified this app", click Advanced → Go to project.
- *  4. Done. It now runs every Sunday at ~06:00 and there's also an
- *     "LFG Cards → Generate now" menu item / you can Run "generateDriveCards".
+ *  4. Done. It now runs every Sunday at ~06:00. To run it by hand any time,
+ *     press Run on the "generateDriveCards" function.
  */
 
 var ICS_URL =
@@ -103,17 +103,9 @@ function createCardFor(ev, parent) {
   return true;
 }
 
-/** Adds a manual menu when opened from a Sheet/Doc-bound context (optional). */
-function onOpen() {
-  try {
-    SpreadsheetApp.getUi()
-      .createMenu("LFG Cards")
-      .addItem("Generate now", "generateDriveCards")
-      .addToUi();
-  } catch (e) {
-    // Standalone script — no host UI; use Run instead.
-  }
-}
+// To run it by hand any time: open this script and press Run on
+// "generateDriveCards". (No spreadsheet menu here — that would make Google
+// ask for Sheets access this script doesn't need.)
 
 // ---------- iCal parsing ----------
 
