@@ -8,7 +8,9 @@
  *   <your folder> / <YYYY-MM-DD> <chapter> / <card>.jpg
  *                                           / <card>.txt   (caption)
  *
- * It skips events it has already saved, so it's safe to run repeatedly.
+ * It skips events it has already saved, so it's safe to run repeatedly, and
+ * on each run it also removes folders for events that have already passed —
+ * so the folder only ever shows what's still upcoming.
  *
  * ---- ONE-TIME SETUP ----
  *  1. drive.google.com → New → More → Google Apps Script (or script.google.com).
@@ -50,21 +52,53 @@ function generateDriveCards() {
   var today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  var upcoming = events.filter(function (ev) {
+    return ev.start && ev.url && ev.start >= today;
+  });
+
+  // Safety: if the feed came back empty (network/parse hiccup), do nothing —
+  // never let a bad fetch trigger the cleanup and wipe the folder.
+  if (upcoming.length === 0) {
+    Logger.log("No upcoming events parsed — skipping (no changes, no cleanup).");
+    return;
+  }
+
   var parent = DriveApp.getFolderById(DEST_FOLDER_ID);
   var made = 0;
   var errors = [];
+  var keep = {}; // folder names for still-upcoming events → kept
 
-  events.forEach(function (ev) {
-    if (!ev.start || !ev.url || ev.start < today) return;
+  upcoming.forEach(function (ev) {
     try {
-      if (createCardFor(ev, parent)) made++;
+      var result = createCardFor(ev, parent);
+      keep[result.folder] = true;
+      if (result.created) made++;
     } catch (err) {
       errors.push(ev.url + " — " + err.message);
     }
   });
 
-  Logger.log("Cards saved this run: " + made);
+  var removed = pruneOldFolders(parent, keep);
+
+  Logger.log("Cards saved this run: " + made + ", old folders removed: " + removed);
   if (errors.length) Logger.log("Problems:\n" + errors.join("\n"));
+}
+
+// Moves to Trash any of our event folders (named "DD.MM ...") that aren't in
+// the keep set — i.e. events that have already passed. Only touches folders
+// matching our own naming, so anything else in the folder is left alone.
+function pruneOldFolders(parent, keep) {
+  var removed = 0;
+  var folders = parent.getFolders();
+  while (folders.hasNext()) {
+    var f = folders.next();
+    var name = f.getName();
+    if (/^\d{2}\.\d{2}(\s|$)/.test(name) && !keep[name]) {
+      f.setTrashed(true);
+      removed++;
+    }
+  }
+  return removed;
 }
 
 /** Fetches one card + caption from the site and saves them to Drive. */
@@ -87,8 +121,10 @@ function createCardFor(ev, parent) {
   var folderName = chapter ? date + " " + chapter : date;
   var folder = getOrCreateSubfolder(parent, folderName);
 
-  // Already done? Skip (keeps repeat runs cheap and avoids duplicates).
-  if (folder.getFilesByType(MimeType.JPEG).hasNext()) return false;
+  // Already done? Keep the folder but don't re-download.
+  if (folder.getFilesByType(MimeType.JPEG).hasNext()) {
+    return { folder: folderName, created: false };
+  }
 
   var filename = filenameFromHeaders(headers) || date + ".jpg";
   folder.createFile(card.getBlob().setName(filename));
@@ -103,7 +139,7 @@ function createCardFor(ev, parent) {
       MimeType.PLAIN_TEXT
     );
   }
-  return true;
+  return { folder: folderName, created: true };
 }
 
 // To run it by hand any time: open this script and press Run on
