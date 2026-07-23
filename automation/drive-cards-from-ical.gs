@@ -103,7 +103,7 @@ function pruneOldFolders(parent, keep) {
 
 /** Fetches one card + caption from the site and saves them to Drive. */
 function createCardFor(ev, parent) {
-  var date = ddmm(ev.start);
+  var date = mmdd(ev.start);
 
   var card = UrlFetchApp.fetch(SITE + "/api/card?luma=" + encodeURIComponent(ev.url), {
     muteHttpExceptions: true,
@@ -185,11 +185,12 @@ function extractLumaUrl(block) {
 
 // ---------- helpers ----------
 
-// Folder date label, e.g. "23.07" (day.month).
-function ddmm(d) {
+// Folder date label, e.g. "07.23" (month.day) — leads with the month so
+// folders sort chronologically by name in Drive.
+function mmdd(d) {
   var mm = ("0" + (d.getUTCMonth() + 1)).slice(-2);
   var dd = ("0" + d.getUTCDate()).slice(-2);
-  return dd + "." + mm;
+  return mm + "." + dd;
 }
 
 // Header lookup that ignores case (HTTP/2 lower-cases header names).
