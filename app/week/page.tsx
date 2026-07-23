@@ -9,6 +9,7 @@ type WeekEvent = {
   startDate: string;
   date: string;
   url: string;
+  caption: string;
 };
 
 function formatDate(iso: string): string {
@@ -197,6 +198,7 @@ export default function WeekPage() {
                 >
                   {ev.url}
                 </a>
+                <Caption text={ev.caption} />
               </div>
             ))}
           </div>
@@ -209,5 +211,44 @@ export default function WeekPage() {
         </div>
       </footer>
     </main>
+  );
+}
+
+function Caption({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // Clipboard blocked — the textarea below is selectable as a fallback.
+    }
+  }
+
+  return (
+    <div className="border-2 border-black/10 bg-white">
+      <div className="flex items-center justify-between px-3 py-2 border-b-2 border-black/10">
+        <span className="font-body text-xs font-bold uppercase tracking-[0.15em] text-black/55">
+          caption
+        </span>
+        <button
+          type="button"
+          onClick={copy}
+          className={
+            "font-body text-xs font-bold px-3 py-1 transition " +
+            (copied
+              ? "bg-[#79CAC4] text-black"
+              : "bg-[#FE5500] text-white hover:bg-[#e04800] cursor-pointer")
+          }
+        >
+          {copied ? "copied ✓" : "copy"}
+        </button>
+      </div>
+      <pre className="font-body text-xs text-black/80 whitespace-pre-wrap p-3 m-0">
+        {text}
+      </pre>
+    </div>
   );
 }

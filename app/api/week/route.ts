@@ -4,6 +4,7 @@ import {
   filterWithinDays,
   LFG_CALENDAR_URL,
 } from "@/lib/calendar";
+import { buildCaption } from "@/lib/caption";
 
 // GET /api/week?days=7&calendar=<optional calendar url>
 // Returns the LFG events happening between today and `days` days from now,
@@ -21,7 +22,10 @@ export async function GET(req: NextRequest) {
   try {
     const all = await fetchCalendarEvents(calendar);
     const today = new Date().toISOString().slice(0, 10);
-    const upcoming = filterWithinDays(all, today, days);
+    const upcoming = filterWithinDays(all, today, days).map((ev) => ({
+      ...ev,
+      caption: buildCaption(ev),
+    }));
     return Response.json({ today, days, count: upcoming.length, events: upcoming });
   } catch (err) {
     console.error("Week list error:", err);

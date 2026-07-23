@@ -7,6 +7,7 @@ import {
 } from "@/lib/calendar";
 import { fetchLumaEvent } from "@/lib/luma-server";
 import { buildCardData } from "@/lib/autofill";
+import { buildCaption } from "@/lib/caption";
 import { buildExportFilename } from "@/lib/types";
 import { launchBrowser, renderCardJpeg } from "@/lib/render";
 
@@ -58,8 +59,9 @@ export async function GET(req: NextRequest) {
         }
         const data = buildCardData(result.event);
         const jpeg = await renderCardJpeg(browser, data, req.nextUrl.origin);
-        const name = `${ev.date} ${buildExportFilename(data)}`;
-        zip.file(name, jpeg);
+        const base = `${ev.date} ${buildExportFilename(data).replace(/\.jpg$/, "")}`;
+        zip.file(`${base}.jpg`, jpeg);
+        zip.file(`${base}.txt`, buildCaption(ev));
       } catch (err) {
         console.error(`Card failed for ${ev.url}:`, err);
         skipped.push(`${ev.name} — render failed`);
