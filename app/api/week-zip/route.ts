@@ -7,6 +7,7 @@ import {
 } from "@/lib/calendar";
 import { fetchLumaEvent } from "@/lib/luma-server";
 import { buildCardData } from "@/lib/autofill";
+import { ensureVenuePin } from "@/lib/geocode";
 import { buildCaption } from "@/lib/caption";
 import { buildExportFilename } from "@/lib/types";
 import { launchBrowser, renderCardJpeg } from "@/lib/render";
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest) {
           skipped.push(`${ev.name} — ${result.error}`);
           continue;
         }
-        const data = buildCardData(result.event);
+        const data = await ensureVenuePin(buildCardData(result.event));
         const jpeg = await renderCardJpeg(browser, data, req.nextUrl.origin);
         const base = `${ev.date} ${buildExportFilename(data).replace(/\.jpg$/, "")}`;
         zip.file(`${base}.jpg`, jpeg);

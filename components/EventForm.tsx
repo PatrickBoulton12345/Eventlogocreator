@@ -25,6 +25,34 @@ export function EventForm({ data, onChange }: Props) {
   const set = <K extends keyof PostData>(key: K, value: PostData[K]) =>
     onChange({ ...data, [key]: value });
 
+  // Keeps the newest form values to hand, so the map lookup below can
+  // finish late without undoing anything typed in the meantime.
+  const latest = useRef(data);
+  latest.current = data;
+
+  const setLocation = (value: string) => {
+    // A new address means the old map pin no longer belongs to it.
+    onChange({ ...data, location: value, lat: null, lng: null });
+  };
+
+  // Finds the venue on the map once the organiser leaves the field, which
+  // is what the map at the bottom of the pub social card is drawn around.
+  const findOnMap = async (location: string) => {
+    const q = location.trim();
+    if (!q) return;
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+      if (!res.ok) return;
+      const found = (await res.json()) as { lat?: number; lng?: number };
+      if (typeof found.lat !== "number" || typeof found.lng !== "number") return;
+      const current = latest.current;
+      if (current.location.trim() !== q) return;
+      onChange({ ...current, lat: found.lat, lng: found.lng });
+    } catch {
+      // Couldn't find it — the card simply leaves the map off.
+    }
+  };
+
   const setSocial = (key: keyof Socials, value: string) => {
     // If the organiser edits Instagram or Twitter by hand, stop treating
     // that value as ours so a later chapter change won't replace it.
@@ -112,7 +140,8 @@ export function EventForm({ data, onChange }: Props) {
           <input
             type="text"
             value={data.location}
-            onChange={(e) => set("location", e.target.value)}
+            onChange={(e) => setLocation(e.target.value)}
+            onBlur={() => findOnMap(data.location)}
             placeholder="e.g. The Castle, Manchester M4 1ND"
             className={inputCx}
           />

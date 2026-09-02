@@ -73,6 +73,8 @@ export function extractEvent(
       date: dt.date,
       time: dt.time,
       location: "",
+      lat: null,
+      lng: null,
       signupUrl: og.url || fallbackUrl,
     };
   }
@@ -105,16 +107,47 @@ function extractFromEvent(
   const startDate =
     typeof event.startDate === "string" ? event.startDate : "";
   const dt = parseDateTime(startDate);
+  const geo = extractGeo(event.location);
   return {
     name: typeof event.name === "string" ? event.name.trim() : "",
     date: dt.date,
     time: dt.time,
     location: formatLocation(event.location),
+    lat: geo.lat,
+    lng: geo.lng,
     signupUrl:
       typeof event.url === "string" && event.url.trim()
         ? event.url.trim()
         : fallbackUrl,
   };
+}
+
+// Luma's event JSON-LD carries the venue pin as location.geo
+// (GeoCoordinates), and sometimes as location.latitude/longitude too.
+function extractGeo(loc: unknown): { lat: number | null; lng: number | null } {
+  const none = { lat: null, lng: null };
+  if (!loc || typeof loc !== "object") return none;
+  if (Array.isArray(loc)) return loc[0] ? extractGeo(loc[0]) : none;
+
+  const obj = loc as Record<string, unknown>;
+  const geo = (obj.geo && typeof obj.geo === "object" ? obj.geo : obj) as Record<
+    string,
+    unknown
+  >;
+  const lat = toNumber(geo.latitude);
+  const lng = toNumber(geo.longitude);
+  if (lat === null || lng === null) return none;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return none;
+  return { lat, lng };
+}
+
+function toNumber(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string" && v.trim()) {
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
 }
 
 function formatLocation(loc: unknown): string {

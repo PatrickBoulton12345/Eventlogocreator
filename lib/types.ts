@@ -25,6 +25,10 @@ export type PostData = {
   signupUrl: string;
   email: string;
   socials: Socials;
+  // Venue coordinates, when we know them (read off the Luma page). Used
+  // to draw the little map at the bottom of the pub social card.
+  lat?: number | null;
+  lng?: number | null;
 };
 
 export const EMPTY_POST: PostData = {
@@ -37,6 +41,8 @@ export const EMPTY_POST: PostData = {
   signupUrl: "",
   email: "",
   socials: { instagram: "", facebook: "", tiktok: "", linkedin: "", twitter: "" },
+  lat: null,
+  lng: null,
 };
 
 export function getEventTypeLabel(data: PostData): string {

@@ -30,3 +30,8 @@ from the list in `lib/chapters.ts`.
 Manual overrides if a card comes out wrong:
 `/api/card?luma=<link>&chapter=LFG Leeds&type=pub-social`
 (types: `pub-social`, `litter-pick`, `hackathon`, `custom`)
+
+Pub social cards also draw a map of the venue. The pin comes from the Luma
+page; override it with `&lat=53.4808&lng=-2.2426` if it lands in the wrong
+place, or `&location=` to change the address (which is then looked up on
+the map afresh).

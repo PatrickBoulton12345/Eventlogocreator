@@ -52,6 +52,9 @@ export function LumaImport({ data, onChange }: Props) {
           ? imported.name.toLowerCase()
           : data.customEventLabel,
       location: imported.location || data.location,
+      // Luma publishes the venue pin, which the card's map uses.
+      lat: imported.lat ?? data.lat ?? null,
+      lng: imported.lng ?? data.lng ?? null,
       date: imported.date || data.date,
       time: imported.time || data.time,
       signupUrl: imported.signupUrl || data.signupUrl,

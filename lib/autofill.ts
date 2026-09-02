@@ -77,6 +77,8 @@ export function buildCardData(imported: LumaImported): PostData {
     location: normaliseLocation(imported.location),
     date: imported.date,
     time: imported.time,
+    lat: imported.lat ?? null,
+    lng: imported.lng ?? null,
     signupUrl: imported.signupUrl,
     email: "",
     socials: {

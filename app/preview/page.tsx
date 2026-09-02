@@ -6,6 +6,8 @@ const sample = (type: EventType, customLabel = ""): PostData => ({
   customEventLabel: customLabel,
   chapter: "LFG Manchester",
   location: "The Castle, Manchester M4 1ND",
+  lat: 53.4841,
+  lng: -2.2354,
   date: "2026-05-15",
   time: "19:00",
   signupUrl: "https://lookingforgrowth.uk/manchester/event",
