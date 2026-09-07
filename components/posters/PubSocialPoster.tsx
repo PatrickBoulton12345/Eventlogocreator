@@ -7,7 +7,8 @@ import {
 import { BRAND_COLORS } from "@/components/Motif";
 import { LfgWordmark } from "@/components/Wordmark";
 import { SocialIcons } from "@/components/SocialIcons";
-import { PosterFrame, splitWords } from "./PosterFrame";
+import { PosterFrame } from "./PosterFrame";
+import { fitToWidth, textWidth, wrapToWidth } from "@/lib/text-width";
 
 const MAP_WIDTH = 920;
 const MAP_HEIGHT = 290;
@@ -19,8 +20,7 @@ export function PubSocialPoster({ data }: { data: PostData }) {
   // Headline reads "<chapter> at the pub" — the chapter already carries
   // the LFG prefix elsewhere on the card, so drop it from the big type.
   const place = placeName(data.chapter);
-  const lines = splitWords(place);
-  const headlineSize = fitHeadline(lines, "at the pub", 920, 320, 190);
+  const { size: headlineSize, lines } = layoutHeadline(place, "at the pub");
 
   const { venue, area } = splitLocation(data.location);
   const mapSrc = buildMapSrc(data);
@@ -65,7 +65,9 @@ export function PubSocialPoster({ data }: { data: PostData }) {
         <div
           style={{
             fontFamily: "var(--font-headline)",
-            fontSize: 46,
+            // Long chapter names step down so they don't run into the
+            // "chapter event" label on the right.
+            fontSize: fitToWidth(data.chapter || "your chapter", 560, 46, -0.03),
             fontWeight: 700,
             letterSpacing: "-0.03em",
             color: BRAND_COLORS.BLACK,
@@ -103,15 +105,15 @@ export function PubSocialPoster({ data }: { data: PostData }) {
           lineHeight: 0.9,
         }}
       >
-        {lines.map((w) => (
-          <div key={w} style={{ color: BRAND_COLORS.BLACK }}>
-            {w}
+        {lines.map((line, i) => (
+          <div key={`${i}-${line}`} style={{ color: BRAND_COLORS.BLACK }}>
+            {line}
           </div>
         ))}
         <div
           style={{
             color: BRAND_COLORS.CREAM,
-            fontSize: Math.round(headlineSize * 0.5),
+            fontSize: Math.round(headlineSize * HEADLINE.tailScale),
             lineHeight: 1,
             marginTop: Math.round(headlineSize * 0.06),
           }}
@@ -227,23 +229,47 @@ function fitVenue(venue: string): number {
   return Math.max(30, Math.min(58, Math.floor(700 / (chars * 0.5))));
 }
 
-// Shrinks the headline until the stacked chapter words plus the smaller
-// "at the pub" line fit the space they're given.
-function fitHeadline(
-  lines: string[],
+// Works out how big the headline can be and where it breaks: the chapter
+// name fills the width of the card, wrapping onto a second line when it
+// has to, with the smaller "at the pub" line beneath. Both have to fit
+// the space above the details block, so the size comes down until they
+// do — measured from the real font rather than guessed from the number
+// of letters, or a wide name like "Cambridge" runs off the edge.
+const HEADLINE = {
+  maxWidth: 920,
+  maxHeight: 320,
+  idealSize: 190,
+  minSize: 60,
+  letterSpacing: -0.04,
+  lineHeight: 0.9,
+  tailScale: 0.5,
+};
+
+function layoutHeadline(
+  place: string,
   tail: string,
-  maxWidth: number,
-  maxHeight: number,
-  ideal: number,
-): number {
-  const charRatio = 0.54;
-  const tailScale = 0.5;
-  const lineHeight = 0.9;
-  const longest = lines.reduce((acc, l) => Math.max(acc, l.length), 1);
-  const byWidth = maxWidth / (longest * charRatio);
-  const byTailWidth = maxWidth / (tail.length * charRatio * tailScale);
-  const byHeight = maxHeight / (lines.length * lineHeight + tailScale + 0.1);
-  return Math.floor(Math.min(ideal, byWidth, byTailWidth, byHeight));
+): { size: number; lines: string[] } {
+  const { maxWidth, maxHeight, idealSize, minSize, letterSpacing, lineHeight, tailScale } =
+    HEADLINE;
+
+  for (let size = idealSize; size >= minSize; size -= 1) {
+    const lines = wrapToWidth(place, maxWidth, size, letterSpacing);
+    const widest = lines.reduce(
+      (acc, l) => Math.max(acc, textWidth(l, size, letterSpacing)),
+      0,
+    );
+    if (widest > maxWidth) continue;
+    if (textWidth(tail, size * tailScale, letterSpacing) > maxWidth) continue;
+
+    // The stacked lines, then the "at the pub" line and its small gap.
+    const height = lines.length * lineHeight * size + size * tailScale + size * 0.06;
+    if (height <= maxHeight) return { size, lines };
+  }
+
+  return {
+    size: minSize,
+    lines: wrapToWidth(place, maxWidth, minSize, letterSpacing),
+  };
 }
 
 // The map comes from our own /api/map, drawn around the venue pin. No

@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { fitToWidth } from "@/lib/text-width";
 
 type Props = {
   background: string;
@@ -33,15 +34,19 @@ export function splitWords(text: string): string[] {
   return text.trim().split(/\s+/).filter(Boolean);
 }
 
+// The biggest size at which every line still fits the width, measured
+// from the real headline font (see lib/text-width.ts) so wide words
+// can't run off the edge of the card.
 export function fitWordmark(
   lines: string[],
   maxWidth: number,
   idealSize: number,
-  ratio = 0.54,
+  letterSpacingEm = -0.04,
 ): number {
-  const longest = lines.reduce((acc, l) => Math.max(acc, l.length), 0);
-  if (longest === 0) return idealSize;
-  const est = longest * idealSize * ratio;
-  if (est <= maxWidth) return idealSize;
-  return Math.floor(maxWidth / (longest * ratio));
+  if (lines.length === 0) return idealSize;
+  return lines.reduce(
+    (size, line) =>
+      Math.min(size, fitToWidth(line, maxWidth, idealSize, letterSpacingEm)),
+    idealSize,
+  );
 }
