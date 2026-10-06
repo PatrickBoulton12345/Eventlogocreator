@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { PostData } from "@/lib/types";
 import type { LumaImported } from "@/lib/luma";
+import { buildCardData } from "@/lib/autofill";
 
 type Props = {
   data: PostData;
@@ -45,8 +46,17 @@ export function LumaImport({ data, onChange }: Props) {
   }
 
   function applyImport(imported: LumaImported) {
+    const chapter = chapterFrom(imported);
+    // The chapter's Instagram and X handles, for any socials still empty.
+    const handles = chapter ? buildCardData(imported).socials : null;
     onChange({
       ...data,
+      chapter: chapter || data.chapter,
+      socials: {
+        ...data.socials,
+        instagram: data.socials.instagram || handles?.instagram || "",
+        twitter: data.socials.twitter || handles?.twitter || "",
+      },
       customEventLabel:
         data.eventType === "custom" && imported.name
           ? imported.name.toLowerCase()
@@ -79,7 +89,7 @@ export function LumaImport({ data, onChange }: Props) {
       </div>
       <p className="text-sm text-black/65">
         Paste a Luma event link (lu.ma or luma.com) and we&apos;ll fill in the
-        location, date, time, and sign-up URL.
+        chapter, location, date, time, and sign-up URL.
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
@@ -130,8 +140,20 @@ export function LumaImport({ data, onChange }: Props) {
   );
 }
 
+// The chapter named in the Luma event, e.g. "LFG Leeds Pub Social" →
+// "LFG Leeds" — worked out the same way as cards made by /api/card.
+// Empty when the name doesn't mention one.
+function chapterFrom(imported: LumaImported): string {
+  const chapter = buildCardData(imported).chapter.trim();
+  return /^lfg$/i.test(chapter) ? "" : chapter;
+}
+
 function listConflicts(data: PostData, imported: LumaImported): string[] {
   const out: string[] = [];
+  const chapter = chapterFrom(imported);
+  if (chapter && data.chapter.trim() && data.chapter.trim() !== chapter) {
+    out.push(`Chapter: "${data.chapter.trim()}" → "${chapter}"`);
+  }
   if (
     imported.location &&
     data.location &&
