@@ -188,15 +188,48 @@ export function photoPlace(chapter: string): string {
   return photoSearch(chapter)?.place ?? "";
 }
 
-const cache = new Map<string, CityPhoto[]>();
+// Each chapter's photos so far, in the order they're offered, and how
+// many rounds of searching that took. "More photos" searches further.
+type Found = { photos: CityPhoto[]; rounds: number; exhausted: boolean };
+const cache = new Map<string, Found>();
 
-export async function findCityPhotos(chapter: string, limit = 8): Promise<CityPhoto[]> {
+// Up to five rounds of searching (around 40 results from each landmark),
+// which is far more than anyone will click through.
+const MAX_ROUNDS = 5;
+
+// The chapter's photos, `limit` at a time: page 1 is the first eight,
+// page 2 the next eight, and so on. An empty list means we've run out.
+export async function findCityPhotos(
+  chapter: string,
+  limit = 8,
+  page = 1,
+): Promise<CityPhoto[]> {
   const search = photoSearch(chapter);
   if (!search) return [];
   const key = search.queries.join("|");
-  const cached = cache.get(key);
-  if (cached) return cached.slice(0, limit);
+  const found = cache.get(key) ?? { photos: [], rounds: 0, exhausted: false };
 
+  const wanted = page * limit;
+  while (found.photos.length < wanted && !found.exhausted && found.rounds < MAX_ROUNDS) {
+    found.rounds += 1;
+    const seen = new Set(found.photos.map((p) => p.url));
+    const fresh = (await searchRound(search, found.rounds, limit)).filter(
+      (p) => !seen.has(p.url),
+    );
+    if (fresh.length === 0) found.exhausted = true;
+    found.photos.push(...fresh);
+  }
+  if (found.photos.length > 0) cache.set(key, found);
+
+  return found.photos.slice((page - 1) * limit, wanted);
+}
+
+// One round of searching: the next batch of results for every landmark.
+async function searchRound(
+  search: PhotoSearch,
+  round: number,
+  limit: number,
+): Promise<CityPhoto[]> {
   // `about` is the photo's description and categories, where a title like
   // "Manchester Skyline Night" turns out to be Manchester, New Hampshire.
   const fits = (title: string, about = "") =>
@@ -207,11 +240,13 @@ export async function findCityPhotos(chapter: string, limit = 8): Promise<CityPh
   // Wikimedia Commons titles its photos well, so it leads; Openverse
   // (mostly Flickr) only fills in if Commons comes up short.
   let lists = await Promise.all(
-    search.queries.map((q) => searchCommons(q, fits).catch(() => [])),
+    search.queries.map((q) => searchCommons(q, fits, round).catch(() => [])),
   );
   if (lists.reduce((n, l) => n + l.length, 0) < limit) {
     lists = lists.concat(
-      await Promise.all(search.queries.map((q) => searchOpenverse(q, fits).catch(() => []))),
+      await Promise.all(
+        search.queries.map((q) => searchOpenverse(q, fits, round).catch(() => [])),
+      ),
     );
   }
 
@@ -220,11 +255,11 @@ export async function findCityPhotos(chapter: string, limit = 8): Promise<CityPh
   const seen = new Set<string>();
   const perCredit = new Map<string, number>();
   const photos: CityPhoto[] = [];
-  for (let i = 0; photos.length < limit && lists.some((l) => i < l.length); i++) {
+  for (let i = 0; lists.some((l) => i < l.length); i++) {
     for (const list of lists) {
       const p = list[i];
-      if (!p || seen.has(p.url) || photos.length >= limit) continue;
-      // At most two from one photographer.
+      if (!p || seen.has(p.url)) continue;
+      // At most two from one photographer in each round.
       const who = p.credit.split(" / ")[0];
       if ((perCredit.get(who) ?? 0) >= 2) continue;
       perCredit.set(who, (perCredit.get(who) ?? 0) + 1);
@@ -232,8 +267,6 @@ export async function findCityPhotos(chapter: string, limit = 8): Promise<CityPh
       photos.push(p);
     }
   }
-
-  if (photos.length > 0) cache.set(key, photos);
   return photos;
 }
 
@@ -257,6 +290,7 @@ type OpenverseResult = {
 async function searchOpenverse(
   q: string,
   fits: (title: string, about?: string) => boolean,
+  round = 1,
 ): Promise<CityPhoto[]> {
   const url = new URL("https://api.openverse.org/v1/images/");
   url.searchParams.set("q", q);
@@ -266,6 +300,7 @@ async function searchOpenverse(
   url.searchParams.set("source", "flickr,wikimedia");
   url.searchParams.set("category", "photograph");
   url.searchParams.set("page_size", "20");
+  url.searchParams.set("page", String(round));
   const res = await fetch(url, {
     headers: { "User-Agent": UA },
     next: { revalidate: 60 * 60 * 24 },
@@ -304,6 +339,7 @@ type CommonsPage = {
 async function searchCommons(
   q: string,
   fits: (title: string, about?: string) => boolean,
+  round = 1,
 ): Promise<CityPhoto[]> {
   const url = new URL("https://commons.wikimedia.org/w/api.php");
   url.searchParams.set("action", "query");
@@ -312,6 +348,7 @@ async function searchCommons(
   url.searchParams.set("gsrnamespace", "6");
   url.searchParams.set("gsrsearch", `${q} filetype:bitmap`);
   url.searchParams.set("gsrlimit", "10");
+  url.searchParams.set("gsroffset", String((round - 1) * 10));
   url.searchParams.set("prop", "imageinfo");
   url.searchParams.set("iiprop", "url|size|extmetadata");
   url.searchParams.set("iiurlwidth", "330");

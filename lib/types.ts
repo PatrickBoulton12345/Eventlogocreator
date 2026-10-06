@@ -33,7 +33,19 @@ export type PostData = {
   // means "pick the first one we find for the chapter's city".
   photoUrl?: string;
   photoCredit?: string;
+  // How the photo sits on the card: which part of it is centred (0–100
+  // across and down, 50/50 is the middle) and how far it's zoomed in
+  // (1 = just fills the card).
+  photoX?: number;
+  photoY?: number;
+  photoZoom?: number;
 };
+
+export const PHOTO_ZOOM_MAX = 3;
+
+// Back to the middle of the photo, not zoomed — used whenever the photo
+// changes, so a new one doesn't inherit the last one's framing.
+export const PHOTO_FRAMING_RESET = { photoX: 50, photoY: 50, photoZoom: 1 };
 
 export const EMPTY_POST: PostData = {
   eventType: "hackathon",
@@ -49,6 +61,7 @@ export const EMPTY_POST: PostData = {
   lng: null,
   photoUrl: "",
   photoCredit: "",
+  ...PHOTO_FRAMING_RESET,
 };
 
 export function getEventTypeLabel(data: PostData): string {

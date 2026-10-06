@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { PostData } from "@/lib/types";
+import { PHOTO_FRAMING_RESET, type PostData } from "@/lib/types";
 import type { CityPhoto } from "@/lib/photos";
 
 type Props = {
@@ -13,9 +13,14 @@ type Props = {
 // one is picked automatically; the organiser can click another, upload
 // their own, or go without.
 export function PhotoPicker({ data, onChange }: Props) {
-  const [photos, setPhotos] = useState<CityPhoto[]>([]);
+  // Every page of photos fetched so far for this chapter; the arrows step
+  // through them, and the right arrow searches for more past the last.
+  const [pages, setPages] = useState<CityPhoto[][]>([]);
+  const [page, setPage] = useState(0);
+  const [noMore, setNoMore] = useState(false);
   const [place, setPlace] = useState("");
   const [loading, setLoading] = useState(false);
+  const photos = pages[page] ?? [];
 
   // Newest form values, so a search that finishes late doesn't undo
   // anything typed in the meantime.
@@ -28,8 +33,10 @@ export function PhotoPicker({ data, onChange }: Props) {
   const chapter = data.chapter.trim();
 
   useEffect(() => {
+    setPages([]);
+    setPage(0);
+    setNoMore(false);
     if (!chapter) {
-      setPhotos([]);
       setPlace("");
       return;
     }
@@ -41,7 +48,7 @@ export function PhotoPicker({ data, onChange }: Props) {
         const res = await fetch(`/api/photos?chapter=${encodeURIComponent(chapter)}`);
         const json = (await res.json()) as { place: string; photos: CityPhoto[] };
         if (cancelled) return;
-        setPhotos(json.photos ?? []);
+        setPages(json.photos?.length ? [json.photos] : []);
         setPlace(json.place ?? "");
 
         const current = latest.current;
@@ -49,10 +56,15 @@ export function PhotoPicker({ data, onChange }: Props) {
         const untouched = !current.photoUrl || current.photoUrl === autoPicked.current;
         if (first && untouched) {
           autoPicked.current = first.url;
-          onChange({ ...current, photoUrl: first.url, photoCredit: first.credit });
+          onChange({
+            ...current,
+            ...PHOTO_FRAMING_RESET,
+            photoUrl: first.url,
+            photoCredit: first.credit,
+          });
         }
       } catch {
-        if (!cancelled) setPhotos([]);
+        if (!cancelled) setPages([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -66,7 +78,38 @@ export function PhotoPicker({ data, onChange }: Props) {
   }, [chapter]);
 
   const choose = (url: string, credit: string) =>
-    onChange({ ...latest.current, photoUrl: url, photoCredit: credit });
+    onChange({ ...latest.current, ...PHOTO_FRAMING_RESET, photoUrl: url, photoCredit: credit });
+
+  // Shows the next eight, searching further if we haven't fetched them yet.
+  const showMore = async () => {
+    if (page + 1 < pages.length) {
+      setPage(page + 1);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/photos?chapter=${encodeURIComponent(chapter)}&page=${pages.length + 1}`,
+      );
+      const json = (await res.json()) as { photos: CityPhoto[] };
+      if (latest.current.chapter.trim() !== chapter) return;
+      // Leave out any we've already shown.
+      const shown = new Set(pages.flat().map((p) => p.url));
+      const fresh = (json.photos ?? []).filter((p) => !shown.has(p.url));
+      if (fresh.length === 0) {
+        setNoMore(true);
+        return;
+      }
+      setPages([...pages, fresh]);
+      setPage(pages.length);
+    } catch {
+      setNoMore(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const atEnd = noMore && page === pages.length - 1;
 
   const upload = (file: File | undefined) => {
     if (!file) return;
@@ -98,9 +141,13 @@ export function PhotoPicker({ data, onChange }: Props) {
       {photos.length > 0 && (
         <>
           <p className="text-sm text-black/55">
-            Photos of {place}. Click one to use it.
+            Photos of {place}. Click one to use it, or use the arrow for more.
           </p>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="flex items-stretch gap-2">
+          {page > 0 && (
+            <ArrowButton direction="left" onClick={() => setPage(page - 1)} />
+          )}
+          <div className="grid flex-1 grid-cols-4 gap-2">
             {photos.map((p) => {
               const selected = data.photoUrl === p.url;
               return (
@@ -122,6 +169,18 @@ export function PhotoPicker({ data, onChange }: Props) {
               );
             })}
           </div>
+          <ArrowButton
+            direction="right"
+            onClick={showMore}
+            disabled={loading || atEnd}
+            label={loading ? "Finding more photos" : atEnd ? "No more photos found" : "More photos"}
+          />
+          </div>
+          {atEnd && (
+            <p className="text-xs text-black/55">
+              That&apos;s all the photos we could find. Upload your own if none of these work.
+            </p>
+          )}
         </>
       )}
 
@@ -153,5 +212,36 @@ export function PhotoPicker({ data, onChange }: Props) {
         )}
       </div>
     </div>
+  );
+}
+
+function ArrowButton({
+  direction,
+  onClick,
+  disabled = false,
+  label,
+}: {
+  direction: "left" | "right";
+  onClick: () => void;
+  disabled?: boolean;
+  label?: string;
+}) {
+  const name = label ?? (direction === "left" ? "Previous photos" : "More photos");
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={name}
+      title={name}
+      className={
+        "flex w-10 shrink-0 items-center justify-center rounded-md border-2 text-xl font-bold transition " +
+        (disabled
+          ? "cursor-not-allowed border-black/10 bg-black/5 text-black/25"
+          : "border-black/15 bg-white text-black hover:border-black hover:bg-[#FE5500] hover:text-white")
+      }
+    >
+      {direction === "left" ? "←" : "→"}
+    </button>
   );
 }

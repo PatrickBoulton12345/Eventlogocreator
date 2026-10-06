@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   formatDateForDisplay,
   formatTimeForDisplay,
+  PHOTO_ZOOM_MAX,
   type EventType,
   type PostData,
 } from "@/lib/types";
@@ -90,13 +91,7 @@ export function CityPoster({ data }: { data: PostData }) {
         <img
           src={data.photoUrl}
           alt=""
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
+          style={photoStyle(data)}
         />
       )}
 
@@ -239,6 +234,28 @@ export function CityPoster({ data }: { data: PostData }) {
       <ColourStrip />
     </PosterFrame>
   );
+}
+
+// The photo always covers the card. Zooming scales it up around the
+// chosen point, and moving slides which part of it shows.
+function photoStyle(data: PostData): CSSProperties {
+  const x = clamp(data.photoX ?? 50, 0, 100);
+  const y = clamp(data.photoY ?? 50, 0, 100);
+  const zoom = clamp(data.photoZoom ?? 1, 1, PHOTO_ZOOM_MAX);
+  return {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    objectPosition: `${x}% ${y}%`,
+    transform: zoom > 1 ? `scale(${zoom})` : undefined,
+    transformOrigin: `${x}% ${y}%`,
+  };
+}
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Number.isFinite(n) ? n : min));
 }
 
 function Bold({ children }: { children: ReactNode }) {

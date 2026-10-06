@@ -54,7 +54,7 @@ export default function Home() {
             <EventForm data={data} onChange={setData} />
           </section>
           <section className="lg:sticky lg:top-6 lg:self-start">
-            <PostPreview data={data} />
+            <PostPreview data={data} onChange={setData} />
           </section>
         </div>
       </div>

@@ -21,8 +21,10 @@ Once a chapter name is typed, the form shows eight photos of that city to choose
 
 - Photos come from Wikimedia Commons, with Openverse (mostly Flickr) as a backup. Neither needs an account or API key. Only licences that allow commercial use and changes are used, and the card prints the photographer's credit in small type, as those licences require.
 - Each known chapter has its own list of landmark searches in `lib/photos.ts` (e.g. Westminster searches the Palace of Westminster, Big Ben and Trafalgar Square). A photo's title must mention the place, which stops a search for "Putney" finding Putney, Vermont. Edit those lists to change which photos a chapter is offered.
+- The arrow beside the photos searches for eight more (the left arrow goes back). When nothing new turns up, the arrow greys out.
+- With a photo chosen, organisers can drag it on the preview to move it, and use the Zoom slider to enlarge it; Reset puts it back. Picking a new photo resets this. Heavy zoom on a small photo will look soft.
 - Photos load through `app/api/photo/route.ts` so the download button and `/api/card` can both draw them.
-- `/api/card` uses the first photo; add `&photo=3` to use the third instead. `/api/photos?chapter=LFG Leeds` lists the options.
+- `/api/card` uses the first photo; add `&photo=3` to use the third instead. `/api/photos?chapter=LFG Leeds` lists the options (`&page=2` for the next eight).
 
 ## Import from Luma
 

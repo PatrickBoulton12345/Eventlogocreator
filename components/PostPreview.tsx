@@ -5,14 +5,16 @@ import { toJpeg } from "html-to-image";
 import { Poster } from "./Poster";
 import {
   buildExportFilename,
+  PHOTO_FRAMING_RESET,
+  PHOTO_ZOOM_MAX,
   validate,
   type PostData,
 } from "@/lib/types";
 import { POSTER_HEIGHT, POSTER_WIDTH } from "./posters/PosterFrame";
 
-type Props = { data: PostData };
+type Props = { data: PostData; onChange: (next: PostData) => void };
 
-export function PostPreview({ data }: Props) {
+export function PostPreview({ data, onChange }: Props) {
   const posterRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.4);
@@ -32,6 +34,43 @@ export function PostPreview({ data }: Props) {
     window.addEventListener("resize", recalc);
     return () => window.removeEventListener("resize", recalc);
   }, []);
+
+  // Dragging the preview moves the photo behind the words.
+  const drag = useRef<{ x: number; y: number; photoX: number; photoY: number } | null>(
+    null,
+  );
+  const hasPhoto = !!data.photoUrl;
+  const zoom = data.photoZoom ?? 1;
+
+  function startDrag(e: React.PointerEvent<HTMLDivElement>) {
+    if (!hasPhoto) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = {
+      x: e.clientX,
+      y: e.clientY,
+      photoX: data.photoX ?? 50,
+      photoY: data.photoY ?? 50,
+    };
+  }
+
+  function moveDrag(e: React.PointerEvent<HTMLDivElement>) {
+    const start = drag.current;
+    if (!start) return;
+    // Screen pixels → share of the card; dragging right shows more of the
+    // photo's left side, as if pulling the photo along with the pointer.
+    const across = (e.clientX - start.x) / (POSTER_WIDTH * scale);
+    const down = (e.clientY - start.y) / (POSTER_HEIGHT * scale);
+    const speed = 150 / zoom;
+    onChange({
+      ...data,
+      photoX: clampPercent(start.photoX - across * speed),
+      photoY: clampPercent(start.photoY - down * speed),
+    });
+  }
+
+  function endDrag() {
+    drag.current = null;
+  }
 
   const missing = validate(data);
   const canDownload = missing.length === 0;
@@ -76,7 +115,16 @@ export function PostPreview({ data }: Props) {
         >
           <div
             ref={posterRef}
+            onPointerDown={startDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            // Stops the browser picking up the photo itself as a dragged image.
+            onDragStart={(e) => e.preventDefault()}
             style={{
+              cursor: hasPhoto ? (drag.current ? "grabbing" : "grab") : undefined,
+              touchAction: hasPhoto ? "none" : undefined,
+              userSelect: "none",
               width: POSTER_WIDTH,
               height: POSTER_HEIGHT,
               position: "absolute",
@@ -90,6 +138,34 @@ export function PostPreview({ data }: Props) {
           </div>
         </div>
       </div>
+
+      {hasPhoto && (
+        <div className="font-body flex flex-col gap-2 rounded-md border-2 border-black/10 bg-white p-3">
+          <div className="text-sm text-black/70">
+            <span className="font-medium text-black">Move the photo:</span> drag it on
+            the preview above.
+          </div>
+          <label className="flex items-center gap-3 text-sm text-black/70">
+            <span className="font-medium text-black">Zoom</span>
+            <input
+              type="range"
+              min={1}
+              max={PHOTO_ZOOM_MAX}
+              step={0.05}
+              value={zoom}
+              onChange={(e) => onChange({ ...data, photoZoom: Number(e.target.value) })}
+              className="flex-1 accent-[#FE5500]"
+            />
+            <button
+              type="button"
+              onClick={() => onChange({ ...data, ...PHOTO_FRAMING_RESET })}
+              className="text-black/55 underline hover:text-black"
+            >
+              Reset
+            </button>
+          </label>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         <div className="text-xs text-black/55 font-body">
@@ -121,4 +197,8 @@ export function PostPreview({ data }: Props) {
       </div>
     </div>
   );
+}
+
+function clampPercent(n: number): number {
+  return Math.min(100, Math.max(0, n));
 }
