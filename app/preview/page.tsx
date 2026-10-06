@@ -1,5 +1,8 @@
 import { Poster } from "@/components/Poster";
 import type { EventType, PostData } from "@/lib/types";
+import { ensureCityPhoto } from "@/lib/photos";
+
+export const dynamic = "force-dynamic";
 
 const sample = (type: EventType, customLabel = ""): PostData => ({
   eventType: type,
@@ -21,13 +24,17 @@ const sample = (type: EventType, customLabel = ""): PostData => ({
   },
 });
 
-export default function Preview() {
-  const samples: { label: string; data: PostData }[] = [
+export default async function Preview() {
+  const raw: { label: string; data: PostData }[] = [
     { label: "Hackathon", data: sample("hackathon") },
     { label: "Litter Pick", data: sample("litter-pick") },
     { label: "Pub Social", data: sample("pub-social") },
     { label: "Custom (growth summit)", data: sample("custom", "growth summit") },
   ];
+  // Each sample uses a different Manchester photo, to show the range.
+  const samples = await Promise.all(
+    raw.map(async (s, i) => ({ ...s, data: await ensureCityPhoto(s.data, i + 1) })),
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 32, padding: 32 }}>

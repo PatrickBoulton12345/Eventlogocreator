@@ -29,6 +29,10 @@ export type PostData = {
   // to draw the little map at the bottom of the pub social card.
   lat?: number | null;
   lng?: number | null;
+  // The city photo behind the card, and its credit line. An empty photo
+  // means "pick the first one we find for the chapter's city".
+  photoUrl?: string;
+  photoCredit?: string;
 };
 
 export const EMPTY_POST: PostData = {
@@ -43,6 +47,8 @@ export const EMPTY_POST: PostData = {
   socials: { instagram: "", facebook: "", tiktok: "", linkedin: "", twitter: "" },
   lat: null,
   lng: null,
+  photoUrl: "",
+  photoCredit: "",
 };
 
 export function getEventTypeLabel(data: PostData): string {

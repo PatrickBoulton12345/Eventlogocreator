@@ -4,12 +4,14 @@ import { buildCardData } from "@/lib/autofill";
 import { buildExportFilename, getEventTypeLabel } from "@/lib/types";
 import { launchBrowser, renderCardJpeg } from "@/lib/render";
 import { ensureVenuePin } from "@/lib/geocode";
+import { ensureCityPhoto } from "@/lib/photos";
 
 // GET /api/card?luma=<lu.ma or luma.com link>
 // Fetches the event details from Luma, fills in the card automatically,
 // renders it in a headless browser, and returns the finished 1080×1350
 // JPEG. Optional overrides: &chapter= &type= &date= &time= &location=
-// &lat= &lng=
+// &lat= &lng= &photo=<number> (which city photo to use, 1 = first;
+// see /api/photos?chapter=… for the options)
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -84,7 +86,9 @@ export async function GET(req: NextRequest) {
   }
 
   // Look the venue up on the map if Luma didn't publish its pin.
-  const card = await ensureVenuePin(data);
+  // Put a photo of the chapter's city behind it.
+  const photoPick = Number(req.nextUrl.searchParams.get("photo")) || 1;
+  const card = await ensureCityPhoto(await ensureVenuePin(data), photoPick);
 
   let browser;
   try {

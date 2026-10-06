@@ -2,14 +2,27 @@
 
 Make on-brand Instagram posts (1080 × 1350 px) for LFG chapter events. Pick an event style, fill in the details, download a JPG.
 
-## Event styles
+## The card
 
-- **Hackathon** — black background, big orange wordmark, "progressing" bar motif. Energetic, builder feel.
-- **Litter Pick** — cream background, blue stacked wordmark, fill bars across the top. Civic, clean.
-- **Pub Social** — orange background, headline reads "<chapter> at the pub", cream details box with the venue as the biggest line, and a map of the venue along the bottom. Warm, social.
-- **Custom** — slimmed-down cream layout for any event type the chapter wants to run. Type in your own headline (1–3 words).
+Every event type uses the same layout, matching the "LFG wins" carousel slides: a photo of the chapter's city fills the card and fades into a dark tint at the bottom, with the chapter name in a coloured tag, a big lowercase headline ("manchester at the pub."), the date and venue, the sign-up link, the lookingforgrowth wordmark and the four-colour strip along the bottom.
 
-Every post includes the chapter name, the event type, the location, the date, and the time. Optional: sign-up link, contact email, and Instagram / Facebook / TikTok / LinkedIn / X handles.
+The event type sets the headline words and the colour:
+
+- **Pub Social**: "<place> at the pub.", orange
+- **Hackathon**: "<place> hackathon.", yellow
+- **Litter Pick**: "<place> litter pick.", green
+- **Custom**: "<place> <your words>.", teal
+
+Optional extras: sign-up link, contact email, and Instagram / Facebook / TikTok / LinkedIn / X handles.
+
+## City photos
+
+Once a chapter name is typed, the form shows eight photos of that city to choose from; the first is picked automatically. Organisers can click another, upload their own, or go without.
+
+- Photos come from Wikimedia Commons, with Openverse (mostly Flickr) as a backup. Neither needs an account or API key. Only licences that allow commercial use and changes are used, and the card prints the photographer's credit in small type, as those licences require.
+- Each known chapter has its own list of landmark searches in `lib/photos.ts` (e.g. Westminster searches the Palace of Westminster, Big Ben and Trafalgar Square). A photo's title must mention the place, which stops a search for "Putney" finding Putney, Vermont. Edit those lists to change which photos a chapter is offered.
+- Photos load through `app/api/photo/route.ts` so the download button and `/api/card` can both draw them.
+- `/api/card` uses the first photo; add `&photo=3` to use the third instead. `/api/photos?chapter=LFG Leeds` lists the options.
 
 ## Import from Luma
 
@@ -17,20 +30,9 @@ Paste a Luma event URL at the top of the form and hit **Import** to auto-fill th
 
 The import is powered by a small Next.js API route at `app/api/luma/route.ts` that fetches the public Luma page server-side (avoids CORS), parses the embedded JSON-LD `Event` schema, and falls back to OpenGraph meta tags if needed.
 
-## The map on the pub social card
+## Venue map (not currently on the card)
 
-The pub social card ends with a map of the venue, pinned in LFG orange.
-
-- A Luma link already carries the venue's map pin, so cards made from one
-  need nothing extra.
-- An address typed into the form is looked up on the map when you leave
-  the Location field.
-- Either way the picture is drawn by `app/api/map/route.ts`, which builds
-  it from OpenStreetMap tiles. No account, API key or billing needed. If
-  the venue can't be found (or is still "tbc") the card simply leaves the
-  map off rather than showing an empty box.
-- Using Google's own map styling instead would mean a Google Maps API key
-  with billing switched on; only the tile fetching in that file changes.
+The old pub social card ended with a map of the venue. The city-photo layout leaves it off, but the pieces are still here if it's wanted back: `app/api/map/route.ts` draws the map from OpenStreetMap tiles (no API key), and venue pins still come from Luma or from looking up the typed address.
 
 ## Run it locally
 
@@ -41,7 +43,7 @@ npm run dev
 
 Then open <http://localhost:3000>.
 
-To preview all four styles side-by-side with sample data, visit <http://localhost:3000/preview>.
+To preview all four event types side-by-side with sample data, visit <http://localhost:3000/preview>.
 
 ## Brand assets
 

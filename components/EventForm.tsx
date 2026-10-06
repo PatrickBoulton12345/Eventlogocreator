@@ -8,6 +8,7 @@ import {
   type Socials,
 } from "@/lib/types";
 import { findChapterSocials } from "@/lib/chapters";
+import { PhotoPicker } from "@/components/PhotoPicker";
 
 type Props = {
   data: PostData;
@@ -164,6 +165,10 @@ export function EventForm({ data, onChange }: Props) {
             />
           </Field>
         </div>
+      </Section>
+
+      <Section title="City photo">
+        <PhotoPicker data={data} onChange={onChange} />
       </Section>
 
       <Section title="Optional details">
