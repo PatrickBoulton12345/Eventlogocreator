@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { PostData } from "@/lib/types";
+import { getEventTypeLabel, type PostData } from "@/lib/types";
 import type { LumaImported } from "@/lib/luma";
 import { buildCardData } from "@/lib/autofill";
 
@@ -46,21 +46,23 @@ export function LumaImport({ data, onChange }: Props) {
   }
 
   function applyImport(imported: LumaImported) {
+    const card = buildCardData(imported);
     const chapter = chapterFrom(imported);
     // The chapter's Instagram and X handles, for any socials still empty.
-    const handles = chapter ? buildCardData(imported).socials : null;
+    const handles = chapter ? card.socials : null;
     onChange({
       ...data,
+      // The event type comes from the name too ("Social" → pub social),
+      // so a social can't go out as a hackathon card by mistake.
+      eventType: card.eventType,
+      customEventLabel:
+        card.eventType === "custom" ? card.customEventLabel : data.customEventLabel,
       chapter: chapter || data.chapter,
       socials: {
         ...data.socials,
         instagram: data.socials.instagram || handles?.instagram || "",
         twitter: data.socials.twitter || handles?.twitter || "",
       },
-      customEventLabel:
-        data.eventType === "custom" && imported.name
-          ? imported.name.toLowerCase()
-          : data.customEventLabel,
       location: imported.location || data.location,
       // Luma publishes the venue pin, which the card's map uses.
       lat: imported.lat ?? data.lat ?? null,
@@ -89,7 +91,7 @@ export function LumaImport({ data, onChange }: Props) {
       </div>
       <p className="text-sm text-black/65">
         Paste a Luma event link (lu.ma or luma.com) and we&apos;ll fill in the
-        chapter, location, date, time, and sign-up URL.
+        event type, chapter, location, date, time, and sign-up URL.
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
@@ -174,15 +176,19 @@ function listConflicts(data: PostData, imported: LumaImported): string[] {
   ) {
     out.push("Sign-up link will be replaced");
   }
-  if (
-    data.eventType === "custom" &&
-    imported.name &&
-    data.customEventLabel &&
-    data.customEventLabel.toLowerCase() !== imported.name.toLowerCase()
+  // Only worth asking about once the organiser has started filling the
+  // form in — before that, the selected type is just the default.
+  const card = buildCardData(imported);
+  const started = data.chapter.trim() || data.location.trim();
+  if (started && card.eventType !== data.eventType) {
+    out.push(`Event type: ${getEventTypeLabel(data)} → ${getEventTypeLabel(card)}`);
+  } else if (
+    started &&
+    card.eventType === "custom" &&
+    data.customEventLabel.trim() &&
+    data.customEventLabel.trim().toLowerCase() !== card.customEventLabel
   ) {
-    out.push(
-      `Custom event name: "${data.customEventLabel}" → "${imported.name.toLowerCase()}"`,
-    );
+    out.push(`Custom event name: "${data.customEventLabel}" → "${card.customEventLabel}"`);
   }
   return out;
 }

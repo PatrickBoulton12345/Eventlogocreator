@@ -26,7 +26,7 @@ Once a chapter name is typed, the form shows eight photos of that city to choose
 
 ## Import from Luma
 
-Paste a Luma event URL at the top of the form and hit **Import** to auto-fill the location, date, time, and sign-up link. If any of those fields are already filled, the app shows a confirmation modal listing exactly what will be overwritten before applying. The chapter is read from the event name (Luma events are usually called "LFG <chapter> …"), and that chapter's Instagram and X handles fill any empty social fields. The event type is never changed — that stays the user's choice.
+Paste a Luma event URL at the top of the form and hit **Import** to auto-fill the location, date, time, and sign-up link. If any of those fields are already filled, the app shows a confirmation modal listing exactly what will be overwritten before applying. The chapter is read from the event name (Luma events are usually called "LFG <chapter> …"), and that chapter's Instagram and X handles fill any empty social fields. The event type is read from the name too ("Social" → pub social, "Litter pick" → litter pick, "Hackathon" → hackathon; anything else becomes a custom event headed with the event name).
 
 The import is powered by a small Next.js API route at `app/api/luma/route.ts` that fetches the public Luma page server-side (avoids CORS), parses the embedded JSON-LD `Event` schema, and falls back to OpenGraph meta tags if needed.
 

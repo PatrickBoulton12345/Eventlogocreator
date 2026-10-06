@@ -14,8 +14,11 @@ function inferEventType(name: string): { type: EventType; label: string } {
   if (/\bsocial\b|\bpub\b|\bdrinks\b|\bmeet\s*up\b|\bmeetup\b/.test(lower))
     return { type: "pub-social", label: "" };
   // "LFG" is already on the card twice; drop it from the big headline.
+  // "LFG X Birmingham Tech Week" means LFG teaming up with someone; the
+  // leftover "X" shouldn't lead the headline.
   const label = name
     .replace(/\blfg\b/gi, "")
+    .replace(/^\s*(x|×)\s+/i, "")
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
