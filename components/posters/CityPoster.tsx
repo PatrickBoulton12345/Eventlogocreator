@@ -21,7 +21,7 @@ const WHITE = "#FFFFFF";
 const BODY_GREY = "#E4DCCB";
 
 type Look = {
-  // Highlight colour: the tag box and the second headline line.
+  // Highlight colour: the second headline line and the sign-up link.
   accent: string;
   // The colour the photo fades into at the very bottom of the card.
   base: string;
@@ -91,6 +91,7 @@ export function CityPoster({ data }: { data: PostData }) {
         <img
           src={data.photoUrl}
           alt=""
+          data-poster-photo=""
           style={photoStyle(data)}
         />
       )}
@@ -121,23 +122,6 @@ export function CityPoster({ data }: { data: PostData }) {
           alignItems: "flex-start",
         }}
       >
-        <div
-          style={{
-            backgroundColor: look.accent,
-            color: BRAND_COLORS.BLACK,
-            fontFamily: "var(--font-body)",
-            fontWeight: 800,
-            fontSize: 24,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            padding: "12px 20px 10px",
-            lineHeight: 1,
-            marginBottom: 26,
-          }}
-        >
-          {data.chapter.trim() || "your chapter"}
-        </div>
-
         <div
           style={{
             fontFamily: "var(--font-headline)",
