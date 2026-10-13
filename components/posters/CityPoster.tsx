@@ -85,7 +85,7 @@ export function CityPoster({ data }: { data: PostData }) {
   const signup = shortLink(data.signupUrl);
 
   return (
-    <PosterFrame background="#1C1C1C" color={WHITE}>
+    <PosterFrame background={look.base} color={WHITE}>
       {data.photoUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -96,17 +96,17 @@ export function CityPoster({ data }: { data: PostData }) {
         />
       )}
 
-      {/* The photo stays clear at the top, then darkens behind the words
-          and settles into the event's colour at the bottom. */}
+      {/* The photo stays clear at the top, then fades into the event's
+          colour behind the words so they stay readable. */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           background: `linear-gradient(to bottom,
-            rgba(0,0,0,0.05) 0%,
-            rgba(0,0,0,0.15) 22%,
-            rgba(10,8,6,0.72) 45%,
-            rgba(18,12,8,0.9) 62%,
+            ${look.base}00 0%,
+            ${look.base}00 25%,
+            ${look.base}C0 48%,
+            ${look.base}EB 62%,
             ${look.base} 100%)`,
         }}
       />
