@@ -28,7 +28,7 @@ Once a chapter name is typed, the form shows eight photos of that city to choose
 
 ## City sketches
 
-Beside the photos, the form offers a flat drawing of the chapter's city: landmarks in the top half, a dark base under the words. Major cities are drawn from their real landmarks (Westminster, Southwark and a general London skyline for the other London chapters; Edinburgh, Manchester, Liverpool, Leeds, Newcastle, Sheffield, Birmingham for West Midlands, Cardiff for South Wales, Bristol for South West England, Oxford, Cambridge and Brighton). Anywhere else gets a made-up town skyline, the same every time for the same place.
+Beside the photos, the form offers a flat drawing of the chapter's city: landmarks in the top half, a dark base under the words. Every chapter is drawn from its real landmarks: Westminster, Southwark, Lambeth, Hammersmith & Fulham and Putney each have their own, Ealing and Barnet share a general London skyline, and the rest are Edinburgh, Manchester, Liverpool, Leeds, Newcastle, Sheffield, Birmingham (West Midlands), Cardiff (South Wales), Bristol (South West England), Leicester (East Midlands), Reading, Milton Keynes, Kent, Swindon, Oxford, Cambridge and Brighton. A chapter not on the list gets a made-up town skyline, the same every time for the same place.
 
 - The drawings are in `lib/sketch.ts`; `CHAPTER_CITY` says which chapter gets which city.
 - `/api/sketch?chapter=LFG Leeds` returns the drawing as an SVG, and `/api/card` uses it with `&photo=sketch`.

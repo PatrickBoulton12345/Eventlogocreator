@@ -56,9 +56,15 @@ const CHAPTERS: ChapterEntry[] = [
     keywords: ["milton keynes"],
     socials: {},
   },
+  // Kent has an X account each for Tunbridge Wells and Rochester.
   {
     name: "Kent",
-    keywords: ["kent", "rochester", "tunbridge wells", "tunbridge", "tonbridge"],
+    keywords: ["tunbridge wells", "tunbridge", "tonbridge", "twells"],
+    socials: { instagram: "lookingforgrowthrochester", twitter: "lfgtwells" },
+  },
+  {
+    name: "Kent",
+    keywords: ["kent", "rochester"],
     socials: { instagram: "lookingforgrowthrochester", twitter: "lfgrochester" },
   },
   {

@@ -21,7 +21,13 @@ const NEAR = "#2B2521";
 // Cut-outs in the dark shapes: clock faces, windows, gaps.
 const CUT = "#E6DBC4";
 
-type Landmarks = { place: string; draw: () => string };
+type Landmarks = {
+  place: string;
+  draw: () => string;
+  // False leaves out the pale buildings behind, e.g. where they'd show
+  // through a gorge.
+  far?: boolean;
+};
 
 // ---------- the cities ----------
 
@@ -29,12 +35,14 @@ const LONDON: Landmarks = {
   place: "London",
   draw: () =>
     [
-      londonEye(195, 170),
-      bigBen(420, 430),
-      block(445, 100, 120),
+      // Tallest to shortest, as in life: the Shard, the Gherkin, the Eye,
+      // St Paul's, Big Ben.
+      londonEye(190, 175),
+      scaled(430, 0.72, bigBen(430, 430)),
+      block(452, 66, 80, true),
       stPauls(660),
-      gherkin(850, 330),
-      shard(990, 560),
+      gherkin(850, 430),
+      shard(990, 580),
     ].join(""),
 };
 
@@ -43,22 +51,22 @@ const CITIES: Record<string, Landmarks> = {
     place: "Westminster",
     draw: () =>
       [
-        londonEye(190, 165),
-        parliament(400, 960, 150),
-        bigBen(400, 460),
-        victoriaTower(930, 360),
+        londonEye(190, 200),
+        parliament(440, 960, 150),
+        scaled(440, 0.9, bigBen(440, 460)),
+        victoriaTower(950, 400),
       ].join(""),
   },
   southwark: {
     place: "Southwark",
     draw: () =>
       [
-        cathedralTower(120, 250),
-        block(170, 90, 110),
-        towerBridge(470),
-        block(720, 80, 170, true),
-        shard(880, 600),
-        block(960, 90, 140, true),
+        // West to east: the cathedral and the Shard by London Bridge, then
+        // Tower Bridge further down the river.
+        cathedralTower(110, 190, 100),
+        block(165, 80, 110, true),
+        shard(330, 600),
+        towerBridge(760),
       ].join(""),
   },
   london: LONDON,
@@ -77,20 +85,21 @@ const CITIES: Record<string, Landmarks> = {
       [
         townHallSpire(170, 420),
         block(230, 120, 150, true),
-        beetham(450, 540),
-        deansgateTower(640, 470, 85),
-        deansgateTower(745, 400, 80),
-        deansgateTower(845, 330, 75),
-        block(930, 120, 180, true),
+        beetham(450, 470),
+        // Deansgate Square's South Tower is the tallest in the city.
+        deansgateTower(600, 560, 85),
+        deansgateTower(705, 470, 80),
+        deansgateTower(805, 400, 75),
+        block(900, 120, 180, true),
       ].join(""),
   },
   liverpool: {
     place: "Liverpool",
     draw: () =>
       [
-        liverBuilding(250),
-        portBuilding(640),
-        cathedralTower(950, 380, 120),
+        liverBuilding(240),
+        portBuilding(680),
+        cathedralTower(960, 380, 120),
       ].join(""),
   },
   leeds: {
@@ -98,9 +107,9 @@ const CITIES: Record<string, Landmarks> = {
     draw: () =>
       [
         block(40, 120, 170, true),
-        leedsTownHall(380),
+        scaled(380, 0.85, leedsTownHall(380)),
         cornExchange(720),
-        bridgewater(930, 430),
+        bridgewater(930, 520),
       ].join(""),
   },
   newcastle: {
@@ -113,7 +122,7 @@ const CITIES: Record<string, Landmarks> = {
       [
         hill(`M 0 ${G - 120} C 200 ${G - 200} 380 ${G - 150} 540 ${G - 90} L 540 ${G} L 0 ${G} Z`, FAR),
         hillsideHouses(),
-        cathedralSpire(560, 330),
+        cathedralSpire(560, 260),
         artsTower(720, 330),
         stPaulsTower(900, 430),
       ].join(""),
@@ -122,7 +131,7 @@ const CITIES: Record<string, Landmarks> = {
     place: "Birmingham",
     draw: () =>
       [
-        libraryOfBirmingham(80),
+        scaled(190, 0.72, libraryOfBirmingham(80)),
         btTower(420, 560),
         rotunda(560, 340),
         selfridges(720),
@@ -130,22 +139,25 @@ const CITIES: Record<string, Landmarks> = {
   },
   cardiff: {
     place: "Cardiff",
-    draw: () => [cardiffCastle(70), stadium(470)].join(""),
+    draw: () => [shellKeep(0), cardiffCastle(170), stadium(630)].join(""),
   },
   bristol: {
     place: "Bristol",
     draw: () => [balloon(960, 170), cliftonBridge()].join(""),
+    far: false,
   },
   oxford: {
     place: "Oxford",
     draw: () =>
       [
-        churchSpire(110, 420),
-        tomTower(280, 300),
-        radcliffeCamera(540),
-        churchSpire(800, 380),
-        block(850, 120, 150, true),
-        churchSpire(990, 300),
+        // West to east: Tom Tower, the Radcliffe Camera, St Mary the
+        // Virgin's spire, Magdalen Tower, and one more spire.
+        tomTower(130, 300),
+        radcliffeCamera(400),
+        churchSpire(600, 420, true),
+        magdalenTower(780, 330),
+        block(860, 100, 150, true),
+        churchSpire(1010, 300),
       ].join(""),
   },
   cambridge: {
@@ -153,9 +165,53 @@ const CITIES: Record<string, Landmarks> = {
     draw: () =>
       [tree(90, 120), kingsChapel(200, 880), tree(980, 140), tree(1050, 100)].join(""),
   },
+  lambeth: {
+    place: "Lambeth",
+    draw: () => [lambethPalace(150), londonEye(450, 175), mi6(850)].join(""),
+  },
+  hammersmith: {
+    place: "Hammersmith & Fulham",
+    draw: () => [hammersmithBridge(), cravenCottage(950)].join(""),
+  },
+  putney: {
+    place: "Putney",
+    // St Mary's, Putney and All Saints, Fulham at either end of the bridge.
+    draw: () => [boathouses(0), churchTower(290, 230, 64, true), putneyBridge(330, 990), churchTower(1030, 220, 64)].join(""),
+  },
+  reading: {
+    place: "Reading",
+    draw: () => [abbeyGateway(10), maiwandLion(305), readingTownHall(560), blade(910, 470)].join(""),
+  },
+  miltonkeynes: {
+    place: "Milton Keynes",
+    draw: () =>
+      [cow(30), cow(160), cow(290), centreMk(450, 760), cornerstone(890)].join(""),
+  },
+  kent: {
+    place: "Kent",
+    draw: () =>
+      // Tunbridge Wells' Pantiles, an oast house, then Rochester's castle
+      // keep and cathedral side by side as they stand.
+      [oast(70), pantiles(140), rochesterKeep(570), rochesterCathedral(880)].join(""),
+  },
+  swindon: {
+    place: "Swindon",
+    draw: () => [dmjTower(110, 400), railwayWorks(230), steamLoco(620)].join(""),
+  },
+  leicester: {
+    place: "Leicester",
+    draw: () =>
+      [
+        cathedralSpire(170, 400, 80, 180),
+        leicesterClock(420, 250),
+        spaceCentre(650, 290),
+        attenborough(880, 340),
+      ].join(""),
+  },
   brighton: {
     place: "Brighton",
-    draw: () => [royalPavilion(60), pier(470, 980), i360(380, 580), gull(700, 240), gull(780, 300)].join(""),
+    // West to east: the i360, the Royal Pavilion, the Palace Pier.
+    draw: () => [i360(100, 580), royalPavilion(230), pier(570, 1060), gull(700, 240), gull(780, 300)].join(""),
   },
 };
 
@@ -163,9 +219,9 @@ const CITIES: Record<string, Landmarks> = {
 const CHAPTER_CITY: Record<string, string> = {
   Westminster: "westminster",
   Southwark: "southwark",
-  Lambeth: "london",
-  "Hammersmith & Fulham": "london",
-  Putney: "london",
+  Lambeth: "lambeth",
+  "Hammersmith & Fulham": "hammersmith",
+  Putney: "putney",
   Ealing: "london",
   Barnet: "london",
   Edinburgh: "edinburgh",
@@ -180,6 +236,11 @@ const CHAPTER_CITY: Record<string, string> = {
   Oxford: "oxford",
   Cambridge: "cambridge",
   Brighton: "brighton",
+  "Reading & Berkshire": "reading",
+  "Milton Keynes": "miltonkeynes",
+  Kent: "kent",
+  Swindon: "swindon",
+  "Leicester / East Midlands": "leicester",
 };
 
 // A city typed that isn't one of our chapters yet, e.g. "LFG Birmingham".
@@ -223,7 +284,8 @@ export function sketchFor(chapter: string): Sketch | null {
 export function sketchSvg(chapter: string): string {
   const key = cityKey(chapter);
   const seed = hash(key ?? placeOf(chapter).toLowerCase());
-  const near = key ? CITIES[key].draw() : madeUpSkyline(seed);
+  const city = key ? CITIES[key] : null;
+  const near = city ? city.draw() : madeUpSkyline(seed);
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`,
     `<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">`,
@@ -231,7 +293,7 @@ export function sketchSvg(chapter: string): string {
     `</linearGradient></defs>`,
     `<rect width="${W}" height="${G + 2}" fill="url(#sky)"/>`,
     circle(760, 300, 105, SUN),
-    farSkyline(seed),
+    city?.far === false ? "" : farSkyline(seed),
     near,
     rect(0, G, W, H - G),
     `</svg>`,
@@ -270,6 +332,12 @@ function stroke(d: string, width: number, colour = NEAR): string {
 
 function hill(d: string, fill: string): string {
   return path(d, fill);
+}
+
+// Draws `svg` at `k` times its size, keeping it standing on the ground
+// at x = cx.
+function scaled(cx: number, k: number, svg: string): string {
+  return `<g transform="translate(${cx} ${G}) scale(${k}) translate(${-cx} ${-G})">${svg}</g>`;
 }
 
 // A plain building standing on the ground, optionally with lit windows.
@@ -357,10 +425,15 @@ function stPauls(cx: number): string {
   return [
     rect(cx - 130, G - 110, 260, 110),
     windows(cx - 115, G - 95, 230, 80, 8, 18),
-    rect(cx - 125, G - 200, 40, 90),
-    ellipse(cx - 105, G - 200, 20, 24),
-    rect(cx + 85, G - 200, 40, 90),
-    ellipse(cx + 105, G - 200, 20, 24),
+    // The two west towers: stepped, with small domes and ball finials.
+    rect(cx - 125, G - 190, 40, 80),
+    rect(cx - 119, G - 222, 28, 34),
+    ellipse(cx - 105, G - 222, 14, 16),
+    circle(cx - 105, G - 242, 5),
+    rect(cx + 85, G - 190, 40, 80),
+    rect(cx + 91, G - 222, 28, 34),
+    ellipse(cx + 105, G - 222, 14, 16),
+    circle(cx + 105, G - 242, 5),
     rect(cx - 62, G - 185, 124, 75),
     windows(cx - 52, G - 175, 104, 55, 5, 9),
     path(`M ${cx - 74} ${G - 182} A 74 82 0 0 1 ${cx + 74} ${G - 182} Z`),
@@ -374,17 +447,19 @@ function stPauls(cx: number): string {
 function gherkin(cx: number, h: number): string {
   const top = G - h;
   return (
-    path(`M ${cx - 40} ${G} C ${cx - 66} ${G - h * 0.45} ${cx - 56} ${top + 60} ${cx} ${top} C ${cx + 56} ${top + 60} ${cx + 66} ${G - h * 0.45} ${cx + 40} ${G} Z`) +
-    stroke(`M ${cx - 46} ${G - 40} C ${cx - 10} ${G - 120} ${cx + 30} ${G - 170} ${cx + 52} ${G - 250}`, 3, CUT).replace("/>", ` opacity="0.3"/>`) +
-    stroke(`M ${cx - 54} ${G - 160} C ${cx - 20} ${G - 220} ${cx + 10} ${G - 270} ${cx + 22} ${top + 30}`, 3, CUT).replace("/>", ` opacity="0.3"/>`)
+    path(`M ${cx - 32} ${G} C ${cx - 56} ${G - h * 0.45} ${cx - 50} ${top + 70} ${cx - 16} ${top + 10} Q ${cx} ${top - 4} ${cx + 16} ${top + 10} C ${cx + 50} ${top + 70} ${cx + 56} ${G - h * 0.45} ${cx + 32} ${G} Z`) +
+    stroke(`M ${cx - 38} ${G - 40} C ${cx - 10} ${G - h * 0.3} ${cx + 30} ${G - h * 0.45} ${cx + 44} ${G - h * 0.6}`, 3, CUT).replace("/>", ` opacity="0.3"/>`) +
+    stroke(`M ${cx - 46} ${G - h * 0.4} C ${cx - 20} ${G - h * 0.55} ${cx + 6} ${G - h * 0.7} ${cx + 18} ${top + 30}`, 3, CUT).replace("/>", ` opacity="0.3"/>`)
   );
 }
 
 function shard(cx: number, h: number): string {
   const top = G - h;
   return (
-    poly([[cx - 85, G], [cx - 8, top], [cx + 2, top + 40], [cx + 85, G]]) +
-    poly([[cx + 6, top + 20], [cx + 12, top + 6], [cx + 16, top + 60], [cx + 6, top + 70]]) +
+    poly([[cx - 85, G], [cx - 6, top + 40], [cx + 85, G]]) +
+    // The glass shards splaying apart at the top.
+    poly([[cx - 16, top + 70], [cx - 12, top], [cx - 2, top + 56]]) +
+    poly([[cx - 2, top + 60], [cx + 8, top + 14], [cx + 12, top + 72]]) +
     line(cx + 6, top + 90, cx + 46, G - 40, 2, CUT).replace("/>", ` opacity="0.35"/>`)
   );
 }
@@ -429,7 +504,9 @@ function cathedralTower(cx: number, h: number, w = 70): string {
 // ---------- Edinburgh ----------
 
 function edinburghCastle(): string {
-  const rock = `M 50 ${G} C 100 ${G - 110} 190 ${G - 210} 300 ${G - 225} L 740 ${G - 215} C 800 ${G - 205} 840 ${G - 110} 870 ${G} Z`;
+  // Castle Rock: sheer crags on the west, a tail sloping away east down
+  // the Royal Mile.
+  const rock = `M 90 ${G} L 112 ${G - 120} L 128 ${G - 150} L 150 ${G - 165} L 168 ${G - 200} L 230 ${G - 212} L 300 ${G - 225} L 740 ${G - 215} L 790 ${G - 200} L 830 ${G - 165} L 880 ${G - 120} C 930 ${G - 80} 980 ${G - 40} 1040 ${G} Z`;
   const top = G - 222;
   return [
     path(rock),
@@ -452,18 +529,28 @@ function edinburghCastle(): string {
     battlements(746, top - 64, 70, 10),
     // Seats the buildings on the rock.
     rect(280, top - 4, 540, 30),
+    rect(744, top - 4, 76, 40),
   ].join("");
 }
 
+// The Scott Monument: a broad base on four legs round a tall pointed
+// arch, two galleries, then a slim spire.
 function scottMonument(cx: number, h: number): string {
   const top = G - h;
+  const g1 = G - 150;
+  const g2 = G - 250;
   return [
-    poly([[cx - 48, G], [cx - 34, G - 140], [cx - 18, G - 270], [cx, top], [cx + 18, G - 270], [cx + 34, G - 140], [cx + 48, G]]),
-    pinnacle(cx - 40, G - 120, 10, 70),
-    pinnacle(cx + 40, G - 120, 10, 70),
-    pinnacle(cx - 26, G - 240, 8, 60),
-    pinnacle(cx + 26, G - 240, 8, 60),
-    path(`M ${cx - 16} ${G} L ${cx - 16} ${G - 50} A 16 18 0 0 1 ${cx + 16} ${G - 50} L ${cx + 16} ${G} Z`, CUT),
+    rect(cx - 56, g1, 112, 150),
+    path(`M ${cx - 24} ${G} L ${cx - 24} ${G - 80} Q ${cx - 24} ${G - 118} ${cx} ${G - 128} Q ${cx + 24} ${G - 118} ${cx + 24} ${G - 80} L ${cx + 24} ${G} Z`, CUT),
+    rect(cx - 64, g1 - 8, 128, 10),
+    pinnacle(cx - 56, g1 - 8, 12, 60),
+    pinnacle(cx + 56, g1 - 8, 12, 60),
+    poly([[cx - 42, g1 - 6], [cx - 30, g2], [cx + 30, g2], [cx + 42, g1 - 6]]),
+    rect(cx - 8, g1 - 74, 16, 44, CUT, ` opacity="0.35"`),
+    rect(cx - 38, g2 - 8, 76, 10),
+    pinnacle(cx - 32, g2 - 8, 10, 50),
+    pinnacle(cx + 32, g2 - 8, 10, 50),
+    poly([[cx - 22, g2 - 6], [cx, top], [cx + 22, g2 - 6]]),
   ].join("");
 }
 
@@ -484,10 +571,15 @@ function townHallSpire(cx: number, h: number): string {
   ].join("");
 }
 
+// Beetham Tower: the flats in the upper half overhang the hotel floors
+// below on one side, and a glass blade stands above the roof.
 function beetham(x: number, h: number): string {
   const top = G - h;
-  let out = rect(x, top, 90, h) + rect(x - 18, top, 18, 120);
-  for (let y = top + 14; y < G - 10; y += 22) out += rect(x + 8, y, 74, 2, CUT, ` opacity="0.25"`);
+  const step = G - h * 0.45;
+  let out = rect(x, step, 90, G - step) + rect(x - 18, top, 108, step - top + 1) + rect(x + 80, top - 40, 6, 42);
+  for (let y = top + 14; y < G - 10; y += 22) {
+    out += y < step ? rect(x - 10, y, 92, 2, CUT, ` opacity="0.25"`) : rect(x + 8, y, 74, 2, CUT, ` opacity="0.25"`);
+  }
   return out;
 }
 
@@ -500,27 +592,29 @@ function deansgateTower(x: number, h: number, w: number): string {
 
 function liverBuilding(cx: number): string {
   const roof = G - 220;
-  const tower = (x: number) =>
+  const tower = (x: number, flip: boolean) =>
     [
       rect(x - 32, roof - 110, 64, 112),
       clockFace(x, roof - 66, 20),
       rect(x - 24, roof - 150, 48, 42),
       path(`M ${x - 26} ${roof - 148} A 26 34 0 0 1 ${x + 26} ${roof - 148} Z`),
-      liverBird(x, roof - 186),
+      liverBird(x, roof - 186, flip),
     ].join("");
   return [
-    rect(cx - 150, roof, 300, 220),
-    windows(cx - 132, roof + 18, 264, 186, 8, 14),
-    tower(cx - 90),
-    tower(cx + 90),
+    rect(cx - 190, roof, 380, 220),
+    windows(cx - 172, roof + 18, 344, 186, 8, 14),
+    // The two Liver Birds look in opposite directions.
+    tower(cx - 120, false),
+    tower(cx + 120, true),
   ].join("");
 }
 
-function liverBird(cx: number, baseY: number): string {
+function liverBird(cx: number, baseY: number, flip = false): string {
+  const X = (dx: number) => cx + (flip ? -dx : dx);
   return [
     rect(cx - 1.5, baseY - 14, 3, 16),
-    path(`M ${cx - 4} ${baseY - 14} Q ${cx - 6} ${baseY - 34} ${cx + 4} ${baseY - 40} Q ${cx + 12} ${baseY - 38} ${cx + 8} ${baseY - 30} L ${cx + 4} ${baseY - 14} Z`),
-    path(`M ${cx} ${baseY - 30} Q ${cx - 22} ${baseY - 44} ${cx - 26} ${baseY - 26} Q ${cx - 12} ${baseY - 28} ${cx} ${baseY - 22} Z`),
+    path(`M ${X(-4)} ${baseY - 14} Q ${X(-6)} ${baseY - 34} ${X(4)} ${baseY - 40} Q ${X(12)} ${baseY - 38} ${X(8)} ${baseY - 30} L ${X(4)} ${baseY - 14} Z`),
+    path(`M ${X(0)} ${baseY - 30} Q ${X(-22)} ${baseY - 44} ${X(-26)} ${baseY - 26} Q ${X(-12)} ${baseY - 28} ${X(0)} ${baseY - 22} Z`),
   ].join("");
 }
 
@@ -533,8 +627,11 @@ function portBuilding(cx: number): string {
     path(`M ${cx - 50} ${roof - 28} A 50 58 0 0 1 ${cx + 50} ${roof - 28} Z`),
     rect(cx - 7, roof - 106, 14, 26),
     circle(cx, roof - 110, 7),
-    ellipse(cx - 118, roof - 6, 14, 22),
-    ellipse(cx + 118, roof - 6, 14, 22),
+    // Small domes on drums at the corners.
+    rect(cx - 128, roof - 22, 20, 24),
+    path(`M ${cx - 130} ${roof - 20} A 12 15 0 0 1 ${cx - 106} ${roof - 20} Z`),
+    rect(cx + 108, roof - 22, 20, 24),
+    path(`M ${cx + 106} ${roof - 20} A 12 15 0 0 1 ${cx + 130} ${roof - 20} Z`),
   ].join("");
 }
 
@@ -570,8 +667,8 @@ function tyneBridge(): string {
   const right = 850;
   const mid = (left + right) / 2;
   const half = (right - left) / 2;
-  const apex = G - 330;
-  const deck = G - 120;
+  const apex = G - 270;
+  const deck = G - 100;
   const archY = (x: number) => G - (G - apex) * (1 - ((x - mid) / half) ** 2);
   const pts: string[] = [];
   for (let x = left; x <= right; x += 10) pts.push(`${x},${r1(archY(x))}`);
@@ -608,9 +705,10 @@ function hillsideHouses(): string {
   return out;
 }
 
-function cathedralSpire(cx: number, h: number): string {
+function cathedralSpire(cx: number, h: number, w = 60, nave = 140): string {
   const top = G - h;
-  return rect(cx - 70, G - 120, 140, 120) + rect(cx - 30, top + 130, 60, h - 130) + poly([[cx - 26, top + 132], [cx, top], [cx + 26, top + 132]]) + pinnacle(cx - 28, top + 132, 10, 30) + pinnacle(cx + 28, top + 132, 10, 30);
+  const half = w / 2;
+  return rect(cx - nave / 2, G - 120, nave, 120) + rect(cx - half, top + 130, w, h - 130) + poly([[cx - half + 4, top + 132], [cx, top], [cx + half - 4, top + 132]]) + pinnacle(cx - half + 2, top + 132, 10, 34) + pinnacle(cx + half - 2, top + 132, 10, 34);
 }
 
 function artsTower(cx: number, h: number): string {
@@ -631,10 +729,22 @@ function libraryOfBirmingham(x: number): string {
     rect(x, G - 110, 220, 110),
     rect(x - 15, G - 210, 250, 102),
     rect(x + 10, G - 290, 200, 82),
-    windows(x - 3, G - 198, 226, 80, 10, 10),
+    rings(x - 3, G - 200, 236, 88),
+    rings(x + 18, G - 282, 184, 70),
+    // The gold rotunda on the roof.
     rect(x + 75, G - 330, 70, 42, GOLD),
-    path(`M ${x + 75} ${G - 328} A 35 18 0 0 1 ${x + 145} ${G - 328} Z`, GOLD),
   ].join("");
+}
+
+// The Library's facade of interlocking metal rings.
+function rings(x: number, y: number, w: number, h: number): string {
+  let out = "";
+  for (let ry = y + 14; ry < y + h - 6; ry += 24) {
+    for (let rx = x + 14; rx < x + w - 6; rx += 24) {
+      out += `<circle cx="${rx}" cy="${ry}" r="11" fill="none" stroke="${CUT}" stroke-width="2" opacity="0.35"/>`;
+    }
+  }
+  return out;
 }
 
 function btTower(cx: number, h: number): string {
@@ -649,17 +759,19 @@ function btTower(cx: number, h: number): string {
 }
 
 function rotunda(cx: number, h: number): string {
-  let out = rect(cx - 55, G - h, 110, h, NEAR, ` rx="18"`);
+  let out = rect(cx - 55, G - h, 110, h, NEAR, ` rx="5"`);
   for (let y = G - h + 20; y < G - 10; y += 20) out += rect(cx - 45, y, 90, 5, CUT, ` opacity="0.25"`);
   return out;
 }
 
 function selfridges(x: number): string {
-  let out = path(`M ${x} ${G} C ${x - 10} ${G - 120} ${x + 60} ${G - 200} ${x + 150} ${G - 190} C ${x + 250} ${G - 180} ${x + 300} ${G - 110} ${x + 300} ${G} Z`);
-  for (let y = G - 160; y < G - 10; y += 26) {
-    for (let dx = 30; dx < 280; dx += 26) out += circle(x + dx, y, 7, CUT, ` opacity="0.3"`);
+  const d = `M ${x} ${G} C ${x - 10} ${G - 120} ${x + 60} ${G - 200} ${x + 150} ${G - 190} C ${x + 250} ${G - 180} ${x + 300} ${G - 110} ${x + 300} ${G} Z`;
+  let discs = "";
+  for (let y = G - 180; y < G - 10; y += 26) {
+    for (let dx = 10; dx < 300; dx += 26) discs += circle(x + dx, y, 7, CUT, ` opacity="0.3"`);
   }
-  return out;
+  // Keeps the discs inside the building's curves.
+  return path(d) + `<clipPath id="selfridges"><path d="${d}"/></clipPath><g clip-path="url(#selfridges)">${discs}</g>`;
 }
 
 // ---------- Cardiff ----------
@@ -681,6 +793,18 @@ function cardiffCastle(x: number): string {
   ].join("");
 }
 
+// Cardiff Castle's Norman shell keep, a many-sided stone ring on its
+// grassy mound.
+function shellKeep(x: number): string {
+  return [
+    path(`M ${x} ${G} C ${x + 30} ${G - 100} ${x + 130} ${G - 100} ${x + 160} ${G} Z`),
+    rect(x + 36, G - 160, 88, 90),
+    battlements(x + 36, G - 160, 88, 10),
+    rect(x + 66, G - 196, 28, 40),
+    battlements(x + 66, G - 196, 28, 7),
+  ].join("");
+}
+
 function stadium(cx: number): string {
   const left = cx - 160;
   const right = cx + 400;
@@ -689,7 +813,8 @@ function stadium(cx: number): string {
   let out = path(`M ${left} ${G} L ${left} ${roof + 20} Q ${(left + right) / 2} ${roof - 40} ${right} ${roof + 20} L ${right} ${G} Z`);
   for (const m of masts) {
     out += rect(m - 5, G - 300, 10, 300);
-    out += line(m, G - 300, m - 70, roof + 6, 2) + line(m, G - 300, m + 70, roof + 2, 2);
+    out += line(m, G - 300, Math.max(m - 70, left + 4), m - 70 < left ? roof + 18 : roof + 6, 2);
+    out += line(m, G - 300, Math.min(m + 70, right - 4), m + 70 > right ? roof + 18 : roof + 2, 2);
   }
   return out + windows(left + 20, roof + 40, right - left - 40, 50, 10, 16);
 }
@@ -713,7 +838,7 @@ function cliftonBridge(): string {
   const tower = (x: number) => rect(x - 26, towerTop, 52, cliff - towerTop + 20) + rect(x - 12, towerTop + 40, 24, 70, CUT) + path(`M ${x - 12} ${towerTop + 40} A 12 14 0 0 1 ${x + 12} ${towerTop + 40} Z`, CUT);
   out += tower(lx) + tower(rx);
   // Cabot Tower on the hill.
-  out += rect(85, cliff - 190, 26, 152) + poly([[82, cliff - 188], [98, cliff - 240], [114, cliff - 188]]);
+  out += rect(80, cliff - 170, 40, 140) + rect(74, cliff - 128, 52, 8) + rect(88, cliff - 206, 24, 38) + poly([[86, cliff - 204], [100, cliff - 244], [114, cliff - 204]]);
   return out;
 }
 
@@ -733,30 +858,48 @@ function balloon(cx: number, cy: number): string {
 function radcliffeCamera(cx: number): string {
   let out = rect(cx - 130, G - 120, 260, 120);
   for (let x = cx - 116; x <= cx + 106; x += 26) out += rect(x, G - 104, 10, 90, CUT, ` opacity="0.25"`);
-  out += rect(cx - 95, G - 190, 190, 72);
-  for (let x = cx - 80; x <= cx + 70; x += 24) out += rect(x, G - 180, 8, 52, CUT, ` opacity="0.3"`);
+  out += rect(cx - 84, G - 190, 168, 72);
+  for (let x = cx - 72; x <= cx + 64; x += 22) out += rect(x, G - 180, 8, 52, CUT, ` opacity="0.3"`);
   out += path(`M ${cx - 96} ${G - 188} A 96 100 0 0 1 ${cx + 96} ${G - 188} Z`);
   out += rect(cx - 14, G - 330, 28, 46) + path(`M ${cx - 16} ${G - 328} A 16 22 0 0 1 ${cx + 16} ${G - 328} Z`) + rect(cx - 2, G - 370, 4, 24);
   return out;
 }
 
-function churchSpire(cx: number, h: number): string {
+// A church tower and spire. `grand` adds the tall pinnacles round the
+// spire's foot, as on Oxford's University Church of St Mary.
+function churchSpire(cx: number, h: number, grand = false): string {
   const top = G - h;
   const towerTop = G - h * 0.45;
+  const corner = grand ? 90 : 34;
   return [
     rect(cx - 30, towerTop, 60, h * 0.45),
     rect(cx - 10, towerTop + 20, 20, 40, CUT, ` opacity="0.3"`),
     poly([[cx - 26, towerTop + 2], [cx, top], [cx + 26, towerTop + 2]]),
-    pinnacle(cx - 28, towerTop + 2, 10, 34),
-    pinnacle(cx + 28, towerTop + 2, 10, 34),
+    pinnacle(cx - 28, towerTop + 2, grand ? 14 : 10, corner),
+    pinnacle(cx + 28, towerTop + 2, grand ? 14 : 10, corner),
+    grand ? pinnacle(cx - 12, towerTop + 2, 8, corner * 0.7) + pinnacle(cx + 12, towerTop + 2, 8, corner * 0.7) : "",
+  ].join("");
+}
+
+// Magdalen Tower: square, battlemented, a pinnacle at each corner and no
+// spire.
+function magdalenTower(cx: number, h: number): string {
+  const top = G - h;
+  return [
+    rect(cx - 36, top, 72, h),
+    battlements(cx - 36, top, 72, 9),
+    pinnacle(cx - 32, top - 8, 12, 46),
+    pinnacle(cx + 32, top - 8, 12, 46),
+    rect(cx - 16, top + 30, 12, 50, CUT, ` opacity="0.3"`),
+    rect(cx + 4, top + 30, 12, 50, CUT, ` opacity="0.3"`),
   ].join("");
 }
 
 function tomTower(cx: number, h: number): string {
   const top = G - h;
   return [
-    rect(cx - 150, G - 120, 300, 120),
-    windows(cx - 135, G - 104, 270, 90, 8, 18),
+    rect(cx - 110, G - 120, 220, 120),
+    windows(cx - 95, G - 104, 190, 90, 8, 18),
     rect(cx - 45, top + 100, 90, h - 100),
     rect(cx - 30, top + 50, 60, 52),
     path(`M ${cx - 32} ${top + 52} Q ${cx - 34} ${top + 10} ${cx} ${top} Q ${cx + 34} ${top + 10} ${cx + 32} ${top + 52} Z`),
@@ -785,8 +928,10 @@ function tree(cx: number, size: number): string {
 
 // ---------- Brighton ----------
 
+// The i360: a very slim pole with a glass viewing ring around it.
 function i360(cx: number, h: number): string {
-  return rect(cx - 9, G - h, 18, h) + ellipse(cx, G - h * 0.55, 66, 20) + rect(cx - 50, G - h * 0.55 - 3, 100, 6, CUT, ` opacity="0.35"`) + rect(cx - 40, G - 40, 80, 40);
+  const podY = G - h * 0.55;
+  return rect(cx - 9, G - h, 18, h) + ellipse(cx, podY, 36, 11) + rect(cx - 30, podY - 2, 60, 4, CUT, ` opacity="0.45"`) + rect(cx - 40, G - 40, 80, 40);
 }
 
 function pier(x0: number, x1: number): string {
@@ -807,14 +952,372 @@ function royalPavilion(x: number): string {
     onion(x + 150, G - 148, 58),
     onion(x + 50, G - 108, 32),
     onion(x + 250, G - 108, 32),
-    rect(x + 4, G - 190, 12, 80) + pinnacle(x + 10, G - 188, 14, 24),
-    rect(x + 284, G - 190, 12, 80) + pinnacle(x + 290, G - 188, 14, 24),
+    onion(x + 100, G - 108, 14),
+    onion(x + 200, G - 108, 14),
+    // Slim minarets, each with a tiny onion on top.
+    rect(x + 6, G - 196, 8, 88) + onion(x + 10, G - 194, 9),
+    rect(x + 286, G - 196, 8, 88) + onion(x + 290, G - 194, 9),
   ].join("");
 }
 
 function gull(cx: number, cy: number): string {
   return stroke(`M ${cx - 18} ${cy} Q ${cx - 9} ${cy - 10} ${cx} ${cy} Q ${cx + 9} ${cy - 10} ${cx + 18} ${cy}`, 3);
 }
+
+// ---------- Lambeth ----------
+
+// Lambeth Palace's gatehouse, Morton's Tower: two square brick towers
+// either side of the arch.
+function lambethPalace(cx: number): string {
+  const tower = (x: number) => rect(x - 36, G - 230, 72, 230) + battlements(x - 36, G - 230, 72, 12) + windows(x - 22, G - 200, 44, 150, 8, 18);
+  return [
+    rect(cx - 140, G - 110, 280, 110),
+    battlements(cx - 140, G - 110, 280, 12),
+    tower(cx - 62),
+    tower(cx + 62),
+    rect(cx - 26, G - 190, 52, 190),
+    battlements(cx - 26, G - 190, 52, 10),
+    path(`M ${cx - 18} ${G} L ${cx - 18} ${G - 70} L ${cx} ${G - 98} L ${cx + 18} ${G - 70} L ${cx + 18} ${G} Z`, CUT),
+  ].join("");
+}
+
+// The SIS building at Vauxhall Cross: stepped tiers rising to the middle.
+function mi6(cx: number): string {
+  const tiers: [number, number][] = [[420, 90], [360, 150], [300, 200], [240, 245], [200, 270]];
+  let out = "";
+  for (const [w, h] of tiers) {
+    out += rect(cx - w / 2, G - h, w, h);
+    out += rect(cx - w / 2 + 10, G - h + 14, w - 20, 10, CUT, ` opacity="0.3"`);
+  }
+  return out + windows(cx - 180, G - 70, 360, 60, 8, 14);
+}
+
+// ---------- Hammersmith & Fulham, Putney ----------
+
+// Hammersmith Bridge: a suspension bridge with short side spans, whose
+// two towers are open frames topped with little turrets.
+function hammersmithBridge(): string {
+  const deck = G - 70;
+  const [a, b] = [300, 780];
+  const [left, right] = [140, 940];
+  const top = G - 290;
+  const high = top + 20;
+  const low = deck - 12;
+  const chainY = (x: number) => {
+    if (x <= a) return high + ((a - x) / (a - left)) * (low - high);
+    if (x >= b) return high + ((x - b) / (right - b)) * (low - high);
+    return high + (deck - 16 - high) * (1 - ((x - (a + b) / 2) / ((b - a) / 2)) ** 2);
+  };
+  const pts: string[] = [];
+  for (let x = left; x <= right; x += 10) pts.push(`${x},${r1(chainY(x))}`);
+  let out = rect(0, deck, W, 16);
+  out += `<polyline points="${pts.join(" ")}" fill="none" stroke="${NEAR}" stroke-width="7"/>`;
+  for (let x = left + 30; x < right - 20; x += 28) {
+    const y = chainY(x);
+    if (y < deck - 8 && Math.abs(a - x) > 40 && Math.abs(b - x) > 40) out += line(x, y, x, deck, 2);
+  }
+  for (const t of [a, b]) {
+    out += rect(t - 44, top + 30, 22, G - top - 30) + rect(t + 22, top + 30, 22, G - top - 30);
+    out += rect(t - 44, top + 30, 88, 26) + rect(t - 44, top + 120, 88, 14);
+    out += rect(t - 50, top + 18, 100, 14);
+    for (const dx of [-38, 0, 38]) out += rect(t + dx - 9, top - 14, 18, 34) + ellipse(t + dx, top - 16, 11, 14) + rect(t + dx - 1.5, top - 40, 3, 16);
+  }
+  return out;
+}
+
+// Craven Cottage, Fulham FC's red-brick pavilion by the river.
+function cravenCottage(x: number): string {
+  return [
+    rect(x, G - 100, 110, 100),
+    poly([[x - 6, G - 98], [x + 55, G - 150], [x + 116, G - 98]]),
+    rect(x + 14, G - 76, 18, 24, CUT, ` opacity="0.35"`),
+    rect(x + 46, G - 76, 18, 24, CUT, ` opacity="0.35"`),
+    rect(x + 78, G - 76, 18, 24, CUT, ` opacity="0.35"`),
+    rect(x + 53.5, G - 196, 3, 50),
+    rect(x + 56.5, G - 196, 24, 14, GOLD),
+  ].join("");
+}
+
+// Putney Bridge: a long, low granite bridge on five shallow arches, the
+// middle one widest.
+function putneyBridge(x0: number, x1: number): string {
+  const deck = G - 120;
+  let out = rect(x0, deck, x1 - x0, 26) + rect(x0, deck - 18, x1 - x0, 8);
+  for (let x = x0 + 10; x < x1; x += 30) out += rect(x, deck - 22, 8, 12);
+  out += rect(x0, deck + 26, x1 - x0, G - deck - 26);
+  const spans = [112, 129, 144, 129, 112];
+  const pier = 24;
+  const scale = (x1 - x0 - pier * (spans.length + 1)) / spans.reduce((a, b) => a + b, 0);
+  let ax = x0 + pier;
+  for (const span of spans) {
+    const aw = span * scale;
+    out += path(`M ${r1(ax)} ${G} L ${r1(ax)} ${deck + 66} A ${r1(aw / 2)} ${r1(aw / 6)} 0 0 1 ${r1(ax + aw)} ${deck + 66} L ${r1(ax + aw)} ${G} Z`, CUT);
+    ax += aw + pier;
+  }
+  return out;
+}
+
+// A squat, battlemented church tower with small corner pinnacles, and a
+// round stair turret on one corner if asked.
+function churchTower(cx: number, h: number, w: number, stairTurret = false): string {
+  const top = G - h;
+  return [
+    rect(cx - w / 2, top, w, h),
+    battlements(cx - w / 2, top, w, 8),
+    pinnacle(cx - w / 2 + 4, top - 8, 8, 24),
+    pinnacle(cx + w / 2 - 4, top - 8, 8, 24),
+    rect(cx - 8, top + 30, 16, 40, CUT, ` opacity="0.3"`),
+    stairTurret ? rect(cx + w / 2 - 6, top - 30, 18, h + 30, NEAR, ` rx="8"`) : "",
+  ].join("");
+}
+
+// The rowing clubs' boathouses along the Embankment.
+function boathouses(x: number): string {
+  let out = "";
+  for (let i = 0; i < 3; i++) {
+    const bx = x + i * 82;
+    out += rect(bx, G - 120, 78, 120) + poly([[bx - 4, G - 118], [bx + 39, G - 165], [bx + 82, G - 118]]);
+    out += rect(bx + 6, G - 60, 66, 6) + rect(bx + 14, G - 100, 50, 26, CUT, ` opacity="0.3"`);
+  }
+  return out;
+}
+
+// ---------- Reading ----------
+
+// The Abbey Gateway, the one intact piece of Reading Abbey: a boxy,
+// battlemented gatehouse over a pointed arch, beside a stub of ruined
+// flint wall.
+function abbeyGateway(x: number): string {
+  return [
+    poly([[x, G], [x, G - 70], [x + 20, G - 86], [x + 36, G - 60], [x + 50, G - 76], [x + 60, G]]),
+    rect(x + 60, G - 150, 150, 150),
+    battlements(x + 60, G - 150, 150, 12),
+    rect(x + 60, G - 176, 22, 30) + rect(x + 188, G - 176, 22, 30),
+    path(`M ${x + 115} ${G} L ${x + 115} ${G - 60} L ${x + 135} ${G - 88} L ${x + 155} ${G - 60} L ${x + 155} ${G} Z`, CUT),
+    rect(x + 90, G - 128, 14, 26, CUT, ` opacity="0.35"`),
+    rect(x + 166, G - 128, 14, 26, CUT, ` opacity="0.35"`),
+  ].join("");
+}
+
+// The Maiwand Lion in the Forbury Gardens, roaring on its tall plinth.
+function maiwandLion(cx: number): string {
+  const top = G - 130;
+  return [
+    rect(cx - 60, top, 120, 130),
+    rect(cx - 68, top - 8, 136, 10),
+    path(`M ${cx - 46} ${top - 50} Q ${cx - 40} ${top - 66} ${cx + 30} ${top - 60} Q ${cx + 50} ${top - 56} ${cx + 48} ${top - 38} L ${cx - 46} ${top - 38} Z`),
+    rect(cx - 44, top - 40, 10, 32) + rect(cx - 26, top - 40, 10, 32) + rect(cx + 20, top - 40, 10, 32) + rect(cx + 36, top - 40, 10, 32),
+    // Mane, snout, and the tuft at the end of the tail.
+    circle(cx - 50, top - 68, 28),
+    poly([[cx - 72, top - 76], [cx - 92, top - 62], [cx - 74, top - 50]]),
+    stroke(`M ${cx + 48} ${top - 54} Q ${cx + 70} ${top - 64} ${cx + 66} ${top - 86}`, 5),
+    circle(cx + 66, top - 88, 7),
+  ].join("");
+}
+
+// Reading Town Hall: Victorian brick with gables and a slim clock tower.
+function readingTownHall(cx: number): string {
+  let out = rect(cx - 170, G - 150, 340, 150);
+  for (const gx of [cx - 130, cx - 50, cx + 50, cx + 130]) out += poly([[gx - 34, G - 148], [gx, G - 196], [gx + 34, G - 148]]);
+  out += windows(cx - 150, G - 130, 300, 110, 8, 18);
+  // The clock tower stands towards one end, not in the middle.
+  const tx = cx + 110;
+  const top = G - 290;
+  out += rect(tx - 26, top + 100, 52, 190) + clockFace(tx, top + 136, 16);
+  out += poly([[tx - 28, top + 102], [tx, top], [tx + 28, top + 102]]);
+  out += pinnacle(tx - 26, top + 102, 8, 30) + pinnacle(tx + 26, top + 102, 8, 30);
+  return out;
+}
+
+// The Blade: Reading's tallest building, with its spike on top.
+function blade(cx: number, h: number): string {
+  const top = G - h;
+  return poly([[cx - 60, G], [cx - 60, top + 150], [cx + 60, top + 100], [cx + 60, G]]) +
+    // The slim lattice spike rising from the roof's high end.
+    poly([[cx + 42, top + 104], [cx + 52, top], [cx + 58, top + 102]]) +
+    windows(cx - 46, top + 170, 92, h - 190, 6, 10);
+}
+
+// ---------- Milton Keynes ----------
+
+// One of the Concrete Cows, facing right: a boxy body, a lowered head
+// with ear nubs, an udder and a tail.
+function cow(x: number): string {
+  return [
+    rect(x, G - 72, 92, 38, NEAR, ` rx="10"`),
+    poly([[x + 86, G - 70], [x + 104, G - 70], [x + 118, G - 46], [x + 106, G - 38], [x + 90, G - 50]]),
+    poly([[x + 94, G - 70], [x + 92, G - 80], [x + 102, G - 72]]),
+    rect(x + 6, G - 36, 10, 36) + rect(x + 22, G - 36, 10, 36) + rect(x + 66, G - 36, 10, 36) + rect(x + 80, G - 36, 10, 36),
+    ellipse(x + 50, G - 32, 10, 6),
+    line(x + 2, G - 66, x - 8, G - 40, 3),
+  ].join("");
+}
+
+// The shopping centre: long, low and flat-roofed, in glass and white
+// steel.
+function centreMk(x0: number, x1: number): string {
+  let out = rect(x0, G - 90, x1 - x0, 90) + rect(x0 - 10, G - 98, x1 - x0 + 20, 8);
+  out += rect(x0 + 8, G - 74, x1 - x0 - 16, 30, CUT, ` opacity="0.22"`);
+  for (let x = x0 + 30; x < x1 - 40; x += 80) out += rect(x, G - 28, 50, 6, CUT, ` opacity="0.3"`);
+  return out;
+}
+
+// Church of Christ the Cornerstone: a domed church with a tall bell tower.
+function cornerstone(cx: number): string {
+  return [
+    rect(cx - 110, G - 130, 220, 130),
+    windows(cx - 95, G - 112, 190, 90, 8, 18),
+    rect(cx - 70, G - 180, 140, 52),
+    path(`M ${cx - 76} ${G - 178} A 76 84 0 0 1 ${cx + 76} ${G - 178} Z`),
+    rect(cx - 10, G - 296, 20, 36),
+    rect(cx - 2, G - 332, 4, 38),
+    rect(cx - 12, G - 320, 24, 4),
+    rect(cx + 120, G - 320, 44, 320),
+    rect(cx + 128, G - 300, 28, 40, CUT, ` opacity="0.3"`),
+    rect(cx + 140.5, G - 352, 3, 34),
+    rect(cx + 132, G - 340, 20, 3),
+  ].join("");
+}
+
+// ---------- Kent ----------
+
+// An oast house: a round kiln with a steep cone and a white cowl.
+function oast(cx: number): string {
+  return [
+    rect(cx - 44, G - 110, 88, 110),
+    poly([[cx - 50, G - 108], [cx - 10, G - 240], [cx + 10, G - 240], [cx + 50, G - 108]]),
+    // The white cowl, hooded, with its wind vane.
+    path(`M ${cx - 12} ${G - 238} L ${cx - 12} ${G - 270} Q ${cx - 6} ${G - 292} ${cx + 18} ${G - 282} L ${cx + 18} ${G - 262} L ${cx + 12} ${G - 238} Z`, CUT),
+    rect(cx + 18, G - 276, 18, 4),
+  ].join("");
+}
+
+// Rochester Castle's square Norman keep: a turret at each corner, the
+// south-east one round (rebuilt after the siege of 1215), and narrow
+// slit windows.
+function rochesterKeep(cx: number): string {
+  const top = G - 300;
+  let out = rect(cx - 140, G - 90, 280, 90) + battlements(cx - 140, G - 90, 280, 12);
+  out += rect(cx - 100, top, 200, 300) + battlements(cx - 100, top, 200, 14);
+  out += rect(cx - 100, top - 44, 36, 46) + battlements(cx - 100, top - 44, 36, 9);
+  out += rect(cx + 60, top - 50, 46, 350, NEAR, ` rx="4"`) + battlements(cx + 60, top - 50, 46, 9);
+  for (let wy = top + 40; wy < G - 70; wy += 60) {
+    for (const wx of [cx - 60, cx - 14, cx + 30]) out += rect(wx, wy, 6, 28, CUT, ` opacity="0.35"`);
+  }
+  return out;
+}
+
+// Rochester Cathedral: a gabled west front between two small turrets,
+// the nave, and a square central tower with a short spire.
+function rochesterCathedral(cx: number): string {
+  return [
+    rect(cx - 150, G - 130, 330, 130),
+    poly([[cx - 150, G - 130], [cx - 140, G - 150], [cx + 170, G - 150], [cx + 180, G - 130]]),
+    windows(cx - 70, G - 112, 230, 86, 8, 22),
+    rect(cx - 170, G - 170, 90, 170),
+    poly([[cx - 170, G - 170], [cx - 125, G - 210], [cx - 80, G - 170]]),
+    rect(cx - 178, G - 230, 18, 230) + pinnacle(cx - 169, G - 230, 18, 30),
+    rect(cx - 90, G - 230, 18, 230) + pinnacle(cx - 81, G - 230, 18, 30),
+    path(`M ${cx - 140} ${G} L ${cx - 140} ${G - 50} A 15 18 0 0 1 ${cx - 110} ${G - 50} L ${cx - 110} ${G} Z`, CUT, ` opacity="0.35"`),
+    rect(cx + 20, G - 250, 76, 120),
+    battlements(cx + 20, G - 250, 76, 9),
+    poly([[cx + 30, G - 250], [cx + 58, G - 310], [cx + 86, G - 250]]),
+  ].join("");
+}
+
+// The Pantiles in Tunbridge Wells: a colonnade of slim pillars under the
+// shopfronts' upper floors, and a tree.
+function pantiles(x: number): string {
+  let out = rect(x, G - 170, 210, 110) + poly([[x - 6, G - 168], [x + 105, G - 198], [x + 216, G - 168]]);
+  out += windows(x + 16, G - 150, 180, 70, 10, 20);
+  out += rect(x - 4, G - 64, 218, 8);
+  for (let px = x + 4; px < x + 210; px += 34) out += rect(px, G - 60, 7, 60);
+  return out + tree(x + 250, 120);
+}
+
+// ---------- Swindon ----------
+
+// The David Murray John Tower, the town's tallest.
+function dmjTower(cx: number, h: number): string {
+  let out = rect(cx - 50, G - h, 100, h) + rect(cx - 56, G - h, 112, 12);
+  for (let y = G - h + 28; y < G - 16; y += 28) out += rect(cx - 42, y, 84, 8, CUT, ` opacity="0.25"`);
+  return out;
+}
+
+// The old Great Western Railway works: saw-tooth roofed sheds and a
+// tall chimney.
+function railwayWorks(x: number): string {
+  let out = rect(x, G - 120, 370, 120);
+  for (let tx = x; tx < x + 370; tx += 62) out += poly([[tx, G - 118], [tx, G - 172], [tx + 62, G - 118]]);
+  out += windows(x + 16, G - 96, 340, 70, 10, 16);
+  out += rect(x + 300, G - 280, 30, 170) + rect(x + 296, G - 286, 38, 10);
+  return out;
+}
+
+// A Great Western 4-6-0 steam engine: copper-capped chimney, brass dome,
+// square-topped Belpaire firebox, three big driving wheels behind a
+// small leading pair. With a puff of smoke.
+function steamLoco(x: number): string {
+  const wheel = (cx: number, r: number) => circle(cx, G - r, r) + circle(cx, G - r, r * 0.32, CUT, ` opacity="0.6"`);
+  return [
+    circle(x + 80, G - 250, 28, FAR),
+    circle(x + 120, G - 280, 38, FAR),
+    circle(x + 180, G - 300, 46, FAR),
+    rect(x + 40, G - 170, 210, 80, NEAR, ` rx="20"`),
+    rect(x + 20, G - 160, 40, 70),
+    rect(x + 68, G - 206, 22, 40),
+    path(`M ${x + 62} ${G - 206} L ${x + 96} ${G - 206} L ${x + 92} ${G - 196} L ${x + 66} ${G - 196} Z`, GOLD),
+    ellipse(x + 160, G - 172, 20, 16),
+    rect(x + 240, G - 186, 50, 96),
+    rect(x + 280, G - 236, 110, 160),
+    rect(x + 270, G - 246, 130, 14),
+    rect(x + 300, G - 214, 34, 42, CUT, ` opacity="0.6"`),
+    rect(x + 10, G - 92, 380, 20),
+    rect(x + 4, G - 104, 10, 24),
+    wheel(x + 50, 20),
+    wheel(x + 92, 20),
+    wheel(x + 160, 44),
+    wheel(x + 252, 44),
+    wheel(x + 344, 44),
+    rect(x + 160, G - 50, 184, 8),
+  ].join("");
+}
+
+// ---------- Leicester ----------
+
+// The Haymarket Memorial Clock Tower.
+function leicesterClock(cx: number, h: number): string {
+  const top = G - h;
+  return [
+    rect(cx - 40, G - 120, 80, 120),
+    path(`M ${cx - 18} ${G} L ${cx - 18} ${G - 70} L ${cx} ${G - 96} L ${cx + 18} ${G - 70} L ${cx + 18} ${G} Z`, CUT),
+    rect(cx - 44, G - 130, 8, 130) + rect(cx + 36, G - 130, 8, 130),
+    rect(cx - 34, G - 180, 68, 62),
+    clockFace(cx, G - 150, 20),
+    pinnacle(cx - 34, G - 180, 10, 34),
+    pinnacle(cx + 34, G - 180, 10, 34),
+    poly([[cx - 26, G - 178], [cx, top], [cx + 26, G - 178]]),
+  ].join("");
+}
+
+// The National Space Centre's Rocket Tower: a tall, soft-sided capsule
+// with its rocket standing inside.
+function spaceCentre(cx: number, h: number): string {
+  const top = G - h;
+  let out = path(`M ${cx - 66} ${G} L ${cx - 70} ${top + 90} Q ${cx - 70} ${top} ${cx} ${top} Q ${cx + 70} ${top} ${cx + 70} ${top + 90} L ${cx + 66} ${G} Z`);
+  for (let y = top + 40; y < G - 20; y += 34) out += rect(cx - 58, y, 116, 3, CUT, ` opacity="0.2"`);
+  out += `<g opacity="0.45">${rect(cx - 12, top + 70, 24, h - 80, CUT)}${poly([[cx - 12, top + 72], [cx, top + 26], [cx + 12, top + 72]], CUT)}${poly([[cx - 12, G - 60], [cx - 30, G - 14], [cx - 12, G - 26]], CUT)}${poly([[cx + 12, G - 60], [cx + 30, G - 14], [cx + 12, G - 26]], CUT)}</g>`;
+  return out;
+}
+
+// The University of Leicester's Attenborough Tower, a tall slab.
+function attenborough(cx: number, h: number): string {
+  let out = rect(cx - 50, G - h, 100, h) + rect(cx - 54, G - h, 108, 12);
+  for (let y = G - h + 26; y < G - 16; y += 22) out += rect(cx - 42, y, 84, 7, CUT, ` opacity="0.25"`);
+  return out;
+}
+
+
 
 // ---------- made-up skylines ----------
 
