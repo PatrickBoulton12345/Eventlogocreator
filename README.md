@@ -4,7 +4,7 @@ Make on-brand Instagram posts (1080 × 1350 px) for LFG chapter events. Pick an 
 
 ## The card
 
-Every event type uses the same layout, matching the "LFG wins" carousel slides: a photo of the chapter's city fills the card and fades into the event's colour at the bottom, with a big lowercase headline ("manchester at the pub."), the date and venue, the sign-up link, the lookingforgrowth wordmark and the four-colour strip along the bottom.
+Every event type uses the same layout, matching the "LFG wins" carousel slides: a photo of the chapter's city fills the card, with a big lowercase headline ("manchester at the pub."), the date and venue, the sign-up link, the lookingforgrowth wordmark and the four-colour strip along the bottom.
 
 The event type sets the headline words and the colour:
 

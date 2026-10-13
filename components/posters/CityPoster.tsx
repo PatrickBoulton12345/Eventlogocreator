@@ -11,9 +11,9 @@ import { SocialIcons } from "@/components/SocialIcons";
 import { PosterFrame, POSTER_WIDTH } from "./PosterFrame";
 import { textWidth, wrapToWidth } from "@/lib/text-width";
 
-// Every event card: a photo of the chapter's city filling the card, fading
-// down into a dark tint of the event's colour, with the headline and the
-// details in the lower half. Matches the "LFG wins" carousel slides.
+// Every event card: a photo of the chapter's city filling the card (or the
+// event's colour when there's no photo), with the headline and the details
+// in the lower half. Matches the "LFG wins" carousel slides.
 
 const SIDE = 72;
 const TEXT_WIDTH = POSTER_WIDTH - SIDE * 2;
@@ -23,7 +23,7 @@ const BODY_GREY = "#E4DCCB";
 type Look = {
   // Highlight colour: the second headline line and the sign-up link.
   accent: string;
-  // The colour the photo fades into at the very bottom of the card.
+  // The card's background when there's no photo.
   base: string;
   // The event words in the headline, e.g. "at the pub".
   tail: (data: PostData) => string;
@@ -96,21 +96,6 @@ export function CityPoster({ data }: { data: PostData }) {
         />
       )}
 
-      {/* The photo stays clear at the top, then fades into the event's
-          colour behind the words so they stay readable. */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: `linear-gradient(to bottom,
-            ${look.base}00 0%,
-            ${look.base}00 25%,
-            ${look.base}C0 48%,
-            ${look.base}EB 62%,
-            ${look.base} 100%)`,
-        }}
-      />
-
       <div
         style={{
           position: "absolute",
@@ -120,6 +105,10 @@ export function CityPoster({ data }: { data: PostData }) {
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-start",
+          // Keeps the words readable over a bright photo.
+          textShadow: data.photoUrl
+            ? "0 2px 6px rgba(0,0,0,0.55), 0 0 28px rgba(0,0,0,0.45)"
+            : undefined,
         }}
       >
         <div
