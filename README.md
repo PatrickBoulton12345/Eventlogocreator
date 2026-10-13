@@ -17,7 +17,7 @@ Optional extras: sign-up link, contact email, and Instagram / Facebook / TikTok 
 
 ## City photos
 
-Once a chapter name is typed, the form shows eight photos of that city to choose from; the first is picked automatically. Organisers can click another, upload their own, or go without.
+Once a chapter name is typed, the form shows eight photos of that city to choose from; the first is picked automatically. Organisers can click another, use their own (upload it, drop it on the upload button, or paste it anywhere on the page with Ctrl/⌘+V), or go without.
 
 - Photos come from Wikimedia Commons, with Openverse (mostly Flickr) as a backup. Neither needs an account or API key. Only licences that allow commercial use and changes are used, and the card prints the photographer's credit in small type, as those licences require.
 - Each known chapter has its own list of landmark searches in `lib/photos.ts` (e.g. Westminster searches the Palace of Westminster, Big Ben and Trafalgar Square). A photo's title must mention the place, which stops a search for "Putney" finding Putney, Vermont. Edit those lists to change which photos a chapter is offered.

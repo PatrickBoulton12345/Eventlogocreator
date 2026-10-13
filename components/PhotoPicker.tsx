@@ -10,8 +10,8 @@ type Props = {
 };
 
 // Offers photos of the chapter's city for the card background. The first
-// one is picked automatically; the organiser can click another, upload
-// their own, or go without.
+// one is picked automatically; the organiser can click another, upload,
+// paste or drop in their own, or go without.
 export function PhotoPicker({ data, onChange }: Props) {
   // Every page of photos fetched so far for this chapter; the arrows step
   // through them, and the right arrow searches for more past the last.
@@ -111,8 +111,8 @@ export function PhotoPicker({ data, onChange }: Props) {
 
   const atEnd = noMore && page === pages.length - 1;
 
-  const upload = (file: File | undefined) => {
-    if (!file) return;
+  const upload = (file: File | undefined | null) => {
+    if (!file || !file.type.startsWith("image/")) return;
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") choose(reader.result, "");
@@ -121,6 +121,27 @@ export function PhotoPicker({ data, onChange }: Props) {
   };
 
   const uploaded = !!data.photoUrl?.startsWith("data:");
+
+  // Pasting an image anywhere on the page uses it as the photo, unless
+  // the organiser is pasting text into one of the form's boxes.
+  const uploadRef = useRef(upload);
+  uploadRef.current = upload;
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      const clip = e.clipboardData;
+      const image = Array.from(clip?.files ?? []).find((f) => f.type.startsWith("image/"));
+      if (!image) return;
+      const target = e.target as HTMLElement | null;
+      const typing = !!target?.closest("input, textarea, [contenteditable]");
+      if (typing && clip?.types.includes("text/plain")) return;
+      e.preventDefault();
+      uploadRef.current(image);
+    }
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, []);
+
+  const [dragging, setDragging] = useState(false);
 
   return (
     <div className="flex flex-col gap-3">
@@ -186,14 +207,31 @@ export function PhotoPicker({ data, onChange }: Props) {
 
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <label
+          onDragOver={(e) => {
+            if (!e.dataTransfer.types.includes("Files")) return;
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            upload(e.dataTransfer.files[0]);
+          }}
           className={
             "cursor-pointer rounded-md border-2 px-3 py-2 font-medium transition " +
-            (uploaded
-              ? "border-[#FE5500] bg-[#FE5500]/10"
-              : "border-black/15 bg-white hover:border-black/40")
+            (dragging
+              ? "border-dashed border-[#FE5500] bg-[#FE5500]/20"
+              : uploaded
+                ? "border-[#FE5500] bg-[#FE5500]/10"
+                : "border-black/15 bg-white hover:border-black/40")
           }
         >
-          {uploaded ? "Using your photo · change" : "Upload your own photo"}
+          {dragging
+            ? "Drop to use this photo"
+            : uploaded
+              ? "Using your photo · change"
+              : "Upload your own photo"}
           <input
             type="file"
             accept="image/*"
@@ -201,6 +239,7 @@ export function PhotoPicker({ data, onChange }: Props) {
             onChange={(e) => upload(e.target.files?.[0])}
           />
         </label>
+        <span className="text-black/55">or drop one on the button, or paste one (Ctrl/⌘+V)</span>
         {data.photoUrl && (
           <button
             type="button"
