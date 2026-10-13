@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PHOTO_FRAMING_RESET, type PostData } from "@/lib/types";
 import type { CityPhoto } from "@/lib/photos";
+import { sketchFor } from "@/lib/sketch";
 
 type Props = {
   data: PostData;
@@ -10,8 +11,8 @@ type Props = {
 };
 
 // Offers photos of the chapter's city for the card background. The first
-// one is picked automatically; the organiser can click another, upload,
-// paste or drop in their own, or go without.
+// one is picked automatically; the organiser can click another, use a
+// drawing of the city, upload, paste or drop in their own, or go without.
 export function PhotoPicker({ data, onChange }: Props) {
   // Every page of photos fetched so far for this chapter; the arrows step
   // through them, and the right arrow searches for more past the last.
@@ -121,6 +122,8 @@ export function PhotoPicker({ data, onChange }: Props) {
   };
 
   const uploaded = !!data.photoUrl?.startsWith("data:");
+  const sketch = chapter ? sketchFor(chapter) : null;
+  const sketchChosen = !!sketch && data.photoUrl === sketch.url;
 
   // Pasting an image anywhere on the page uses it as the photo, unless
   // the organiser is pasting text into one of the form's boxes.
@@ -155,7 +158,7 @@ export function PhotoPicker({ data, onChange }: Props) {
       )}
       {chapter && !loading && photos.length === 0 && (
         <p className="text-sm text-black/55">
-          No photos found for {place || chapter}. Upload your own below.
+          No photos found for {place || chapter}. Use the sketch or upload your own below.
         </p>
       )}
 
@@ -206,6 +209,31 @@ export function PhotoPicker({ data, onChange }: Props) {
       )}
 
       <div className="flex flex-wrap items-center gap-3 text-sm">
+        {sketch && (
+          <button
+            type="button"
+            onClick={() => choose(sketch.url, "")}
+            title={
+              sketch.landmarks
+                ? `A drawing of ${sketch.place}'s landmarks`
+                : "A drawing of a town skyline"
+            }
+            className={
+              "flex items-center gap-2 rounded-md border-2 py-1 pl-1 pr-3 font-medium transition " +
+              (sketchChosen
+                ? "border-[#FE5500] bg-[#FE5500]/10"
+                : "border-black/15 bg-white hover:border-black/40")
+            }
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={sketch.url}
+              alt=""
+              className="h-9 w-12 rounded-sm object-cover object-[50%_45%]"
+            />
+            {sketch.landmarks ? `Sketch of ${sketch.place}` : "Skyline sketch"}
+          </button>
+        )}
         <label
           onDragOver={(e) => {
             if (!e.dataTransfer.types.includes("Files")) return;
