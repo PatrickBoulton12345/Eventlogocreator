@@ -79,11 +79,11 @@ export function PostPreview({ data, onChange }: Props) {
     if (!posterRef.current || !canDownload) return;
     setDownloading(true);
     try {
+      await inlinePhoto(posterRef.current);
       const dataUrl = await toJpeg(posterRef.current, {
         width: POSTER_WIDTH,
         height: POSTER_HEIGHT,
         pixelRatio: 1,
-        cacheBust: true,
         quality: 0.95,
         style: { transform: "none" },
       });
@@ -93,7 +93,11 @@ export function PostPreview({ data, onChange }: Props) {
       link.click();
     } catch (err) {
       console.error(err);
-      alert("Couldn't export. Check the browser console for details.");
+      alert(
+        err instanceof Error && err.message.startsWith("Couldn't load the photo")
+          ? err.message
+          : "Couldn't export. Check the browser console for details.",
+      );
     } finally {
       setDownloading(false);
     }
@@ -197,6 +201,30 @@ export function PostPreview({ data, onChange }: Props) {
       </div>
     </div>
   );
+}
+
+// html-to-image fetches each picture again while exporting, and quietly
+// leaves out any it can't get, which dropped the city photo from
+// downloads. So copy the photo the preview already loaded straight into
+// the card first, and stop with a message if that fails.
+async function inlinePhoto(poster: HTMLElement) {
+  const img = poster.querySelector<HTMLImageElement>("img[data-poster-photo]");
+  if (!img || img.src.startsWith("data:")) return;
+
+  let blob: Blob | null = null;
+  for (let attempt = 0; attempt < 2 && !blob; attempt++) {
+    const res = await fetch(img.src).catch(() => null);
+    if (res?.ok) blob = await res.blob();
+  }
+  if (!blob) throw new Error("Couldn't load the photo for the download. Try again in a moment.");
+
+  img.src = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+  await img.decode();
 }
 
 function clampPercent(n: number): number {
