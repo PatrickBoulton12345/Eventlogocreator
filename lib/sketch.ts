@@ -9,8 +9,10 @@ import { findChapterName } from "@/lib/chapters";
 
 const W = 1080;
 const H = 1350;
-// Where the buildings stand. Everything below is the dark base.
-const G = 730;
+// Where the buildings stand. Everything below is the dark base, which
+// the card's words sit on.
+const G = 700;
+export const SKETCH_GROUND = G;
 
 const SKY_TOP = "#F6F1E6";
 const SKY_BOTTOM = "#E6DBC4";

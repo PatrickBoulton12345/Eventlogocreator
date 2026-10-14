@@ -8,8 +8,9 @@ import {
 } from "@/lib/types";
 import { BRAND_COLORS } from "@/components/Motif";
 import { SocialIcons } from "@/components/SocialIcons";
-import { PosterFrame, POSTER_WIDTH } from "./PosterFrame";
+import { PosterFrame, POSTER_HEIGHT, POSTER_WIDTH } from "./PosterFrame";
 import { textWidth, wrapToWidth } from "@/lib/text-width";
+import { SKETCH_GROUND } from "@/lib/sketch";
 
 // Every event card: a photo of the chapter's city filling the card (or the
 // event's colour when there's no photo), with the headline and the details
@@ -17,6 +18,10 @@ import { textWidth, wrapToWidth } from "@/lib/text-width";
 
 const SIDE = 72;
 const TEXT_WIDTH = POSTER_WIDTH - SIDE * 2;
+// The words sit between here and the bottom of the card: clear of a city
+// sketch's skyline, and leaving the top of a photo showing.
+const TEXT_TOP = SKETCH_GROUND + 40;
+const TEXT_BOTTOM = 48;
 const WHITE = "#FFFFFF";
 const BODY_GREY = "#E4DCCB";
 
@@ -27,8 +32,8 @@ type Look = {
   base: string;
   // The event words in the headline, e.g. "at the pub".
   tail: (data: PostData) => string;
-  // A short line after the date and venue.
-  pitch: ReactNode;
+  // A short line after the date and venue, ending in a bold phrase.
+  pitch: { lead: string; bold: string };
 };
 
 const LOOKS: Record<EventType, Look> = {
@@ -36,39 +41,25 @@ const LOOKS: Record<EventType, Look> = {
     accent: BRAND_COLORS.ORANGE,
     base: "#7A2C08",
     tail: () => "at the pub",
-    pitch: (
-      <>
-        Come for a drink and meet the people pushing for growth.{" "}
-        <Bold>Everyone&apos;s welcome.</Bold>
-      </>
-    ),
+    pitch: { lead: "Come for a drink and meet the people pushing for growth.", bold: "Everyone's welcome." },
   },
   hackathon: {
     accent: BRAND_COLORS.YELLOW,
     base: "#6B4524",
     tail: () => "hackathon",
-    pitch: (
-      <>
-        Bring a laptop and build something that fixes a real problem.{" "}
-        <Bold>Everyone&apos;s welcome.</Bold>
-      </>
-    ),
+    pitch: { lead: "Bring a laptop and build something that fixes a real problem.", bold: "Everyone's welcome." },
   },
   "litter-pick": {
     accent: "#8DC63F",
     base: "#3E6626",
     tail: () => "litter pick",
-    pitch: (
-      <>
-        Come and help clean up our streets. <Bold>Everyone&apos;s welcome.</Bold>
-      </>
-    ),
+    pitch: { lead: "Come and help clean up our streets.", bold: "Everyone's welcome." },
   },
   custom: {
     accent: BRAND_COLORS.BLUE,
     base: "#3B6763",
     tail: (data) => data.customEventLabel.trim().toLowerCase() || "your event",
-    pitch: <Bold>Everyone&apos;s welcome.</Bold>,
+    pitch: { lead: "", bold: "Everyone's welcome." },
   },
 };
 
@@ -76,13 +67,19 @@ export function CityPoster({ data }: { data: PostData }) {
   const look = LOOKS[data.eventType];
   const place = placeName(data.chapter);
   const tail = look.tail(data);
-  const headline = layoutHeadline(place, `${tail}.`);
 
   const date = formatDateForDisplay(data.date);
   const time = formatTimeForDisplay(data.time);
   const when = [date, time].filter(Boolean).join(", ") || "date and time tbc";
   const { venue, area } = splitLocation(data.location);
   const signup = shortLink(data.signupUrl);
+  const details = `${when} at ${venue || "venue tbc"}${area ? `, ${area}` : ""}. ${look.pitch.lead} ${look.pitch.bold}`;
+
+  // The headline gets whatever room is left above the details.
+  const socialCount = Object.values(data.socials).filter((h) => h?.trim()).length;
+  const footer = Math.max(44, socialCount * 28 + Math.max(0, socialCount - 1) * 12);
+  const below = TEXT_BOTTOM + footer + FOOTER_GAP + detailsHeight(details, !!signup, !!data.email) + DETAILS_GAP;
+  const headline = layoutHeadline(place, `${tail}.`, POSTER_HEIGHT - below - TEXT_TOP);
 
   return (
     <PosterFrame background={look.base} color={WHITE}>
@@ -101,7 +98,7 @@ export function CityPoster({ data }: { data: PostData }) {
           position: "absolute",
           left: SIDE,
           right: SIDE,
-          bottom: 62,
+          bottom: TEXT_BOTTOM,
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-start",
@@ -119,7 +116,7 @@ export function CityPoster({ data }: { data: PostData }) {
             letterSpacing: `${HEADLINE.letterSpacing}em`,
             lineHeight: HEADLINE.lineHeight,
             // Octarine's descenders hang low; keep them off the copy below.
-            paddingBottom: Math.round(headline.size * 0.12),
+            paddingBottom: Math.round(headline.size * HEADLINE.descent),
           }}
         >
           {headline.placeLines.map((line, i) => (
@@ -142,11 +139,13 @@ export function CityPoster({ data }: { data: PostData }) {
             lineHeight: 1.32,
             color: BODY_GREY,
             letterSpacing: "-0.01em",
-            marginTop: 18,
+            marginTop: DETAILS_GAP,
           }}
         >
           <Bold>{when}</Bold> at <Bold>{venue || "venue tbc"}</Bold>
-          {area ? `, ${area}` : ""}. {look.pitch}
+          {area ? `, ${area}` : ""}. {look.pitch.lead}
+          {look.pitch.lead ? " " : ""}
+          <Bold>{look.pitch.bold}</Bold>
           {signup && (
             <div style={{ marginTop: 14 }}>
               Sign up: <span style={{ color: look.accent, fontWeight: 700 }}>{signup}</span>
@@ -159,7 +158,7 @@ export function CityPoster({ data }: { data: PostData }) {
 
         <div
           style={{
-            marginTop: 34,
+            marginTop: FOOTER_GAP,
             width: "100%",
             display: "flex",
             alignItems: "flex-end",
@@ -302,21 +301,38 @@ const HEADLINE = {
   idealSize: 150,
   minSize: 56,
   letterSpacing: -0.04,
-  lineHeight: 0.92,
+  // Enough room that one line's descenders ("y", "g", "p") clear the
+  // next line's tall letters.
+  lineHeight: 1.02,
+  // Space left under the last line for its descenders.
+  descent: 0.14,
 };
+
+const DETAILS_GAP = 18;
+const FOOTER_GAP = 30;
+
+// Roughly how tall the date, venue and sign-up text will be, so the
+// headline can be sized to fit above it. At 31px a line holds about 54
+// characters; this errs on the side of an extra line.
+function detailsHeight(text: string, signup: boolean, email: boolean): number {
+  const lines = Math.ceil(text.length / 54);
+  return lines * 31 * 1.32 + (signup ? 14 + 41 : 0) + (email ? 6 + 33 : 0);
+}
 
 function layoutHeadline(
   place: string,
   tail: string,
+  room: number,
 ): { size: number; placeLines: string[]; tailLines: string[] } {
-  const { maxHeight, idealSize, minSize, letterSpacing, lineHeight } = HEADLINE;
+  const { idealSize, minSize, letterSpacing, lineHeight, descent } = HEADLINE;
+  const maxHeight = Math.min(HEADLINE.maxHeight, room);
 
   for (let size = idealSize; size >= minSize; size -= 2) {
     const placeLines = place ? wrapToWidth(place, TEXT_WIDTH, size, letterSpacing) : [];
     const tailLines = wrapToWidth(tail, TEXT_WIDTH, size, letterSpacing);
     const all = [...placeLines, ...tailLines];
     if (all.some((l) => textWidth(l, size, letterSpacing) > TEXT_WIDTH)) continue;
-    if (all.length * lineHeight * size <= maxHeight) {
+    if ((all.length * lineHeight + descent) * size <= maxHeight) {
       return { size, placeLines, tailLines };
     }
   }
