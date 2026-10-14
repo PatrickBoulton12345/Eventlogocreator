@@ -31,20 +31,37 @@ export async function launchBrowser(): Promise<Browser> {
   return puppeteer.launch({ executablePath: local, headless: true });
 }
 
+// A photo handed over with the card, e.g. one the organiser uploaded.
+export type CardPhoto = { body: Buffer; type: string };
+
 // Screenshots one card. `origin` is the site's own base URL, used to reach
-// the /render page that draws the poster.
+// the /render page that draws the poster. A `photo` is served to that
+// page directly rather than put in its address.
 export async function renderCardJpeg(
   browser: Browser,
   data: PostData,
   origin: string,
+  photo?: CardPhoto,
 ): Promise<Buffer> {
-  const encoded = Buffer.from(JSON.stringify(data), "utf8").toString(
+  const photoUrl = `${origin}/__card-photo`;
+  const card = photo ? { ...data, photoUrl } : data;
+  const encoded = Buffer.from(JSON.stringify(card), "utf8").toString(
     "base64url",
   );
   const renderUrl = `${origin}/render?d=${encoded}`;
 
   const page = await browser.newPage();
   try {
+    if (photo) {
+      await page.setRequestInterception(true);
+      page.on("request", (request) => {
+        if (request.url() === photoUrl) {
+          void request.respond({ status: 200, contentType: photo.type, body: photo.body });
+        } else {
+          void request.continue();
+        }
+      });
+    }
     await page.setViewport({ width: 1080, height: 1350, deviceScaleFactor: 1 });
     await page.goto(renderUrl, { waitUntil: "networkidle0", timeout: 30000 });
     await page.evaluate(() => document.fonts.ready);

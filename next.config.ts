@@ -6,9 +6,11 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
-  // Make sure the headless-browser binary ships with the /api/card function.
+  // Make sure the headless-browser binary ships with the functions that
+  // draw cards.
   outputFileTracingIncludes: {
     "/api/card": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/api/render": ["./node_modules/@sparticuz/chromium/bin/**"],
   },
   devIndicators: false,
 };

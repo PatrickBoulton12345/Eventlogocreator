@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { PHOTO_FRAMING_RESET, type PostData } from "@/lib/types";
 import type { CityPhoto } from "@/lib/photos";
 import { sketchFor } from "@/lib/sketch";
+import { fileToDataUrl } from "@/lib/image";
 
 type Props = {
   data: PostData;
@@ -114,11 +115,7 @@ export function PhotoPicker({ data, onChange }: Props) {
 
   const upload = (file: File | undefined | null) => {
     if (!file || !file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") choose(reader.result, "");
-    };
-    reader.readAsDataURL(file);
+    fileToDataUrl(file).then((url) => choose(url, ""), () => {});
   };
 
   const uploaded = !!data.photoUrl?.startsWith("data:");

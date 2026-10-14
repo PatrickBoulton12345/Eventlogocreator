@@ -11,6 +11,7 @@ import {
   type PostData,
 } from "@/lib/types";
 import { POSTER_HEIGHT, POSTER_WIDTH } from "./posters/PosterFrame";
+import { urlToDataUrl } from "@/lib/image";
 
 type Props = { data: PostData; onChange: (next: PostData) => void };
 
@@ -79,18 +80,18 @@ export function PostPreview({ data, onChange }: Props) {
     if (!posterRef.current || !canDownload) return;
     setDownloading(true);
     try {
-      await inlinePhoto(posterRef.current);
-      const dataUrl = await toJpeg(posterRef.current, {
-        width: POSTER_WIDTH,
-        height: POSTER_HEIGHT,
-        pixelRatio: 1,
-        quality: 0.95,
-        style: { transform: "none" },
+      // The server draws the card the same in every browser; drawing it
+      // here is the fallback if the server can't.
+      const blob = await renderOnServer(data).catch((err) => {
+        console.warn("Server render failed; drawing the card in the browser", err);
+        return null;
       });
+      const href = blob ? URL.createObjectURL(blob) : await renderInBrowser(posterRef.current);
       const link = document.createElement("a");
-      link.href = dataUrl;
+      link.href = href;
       link.download = buildExportFilename(data);
       link.click();
+      if (blob) setTimeout(() => URL.revokeObjectURL(href), 30_000);
     } catch (err) {
       console.error(err);
       alert(
@@ -203,28 +204,36 @@ export function PostPreview({ data, onChange }: Props) {
   );
 }
 
-// html-to-image fetches each picture again while exporting, and quietly
-// leaves out any it can't get, which dropped the city photo from
-// downloads. So copy the photo the preview already loaded straight into
-// the card first, and stop with a message if that fails.
-async function inlinePhoto(poster: HTMLElement) {
-  const img = poster.querySelector<HTMLImageElement>("img[data-poster-photo]");
-  if (!img || img.src.startsWith("data:")) return;
-
-  let blob: Blob | null = null;
-  for (let attempt = 0; attempt < 2 && !blob; attempt++) {
-    const res = await fetch(img.src).catch(() => null);
-    if (res?.ok) blob = await res.blob();
-  }
-  if (!blob) throw new Error("Couldn't load the photo for the download. Try again in a moment.");
-
-  img.src = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
+// Sends the card's details to /api/render, with the photo the preview
+// already loaded, and returns the finished JPEG.
+async function renderOnServer(data: PostData): Promise<Blob> {
+  const photoUrl =
+    data.photoUrl && !data.photoUrl.startsWith("data:") ? await urlToDataUrl(data.photoUrl) : data.photoUrl;
+  const res = await fetch("/api/render", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...data, photoUrl }),
   });
-  await img.decode();
+  if (!res.ok) throw new Error(`Render failed (HTTP ${res.status})`);
+  return res.blob();
+}
+
+// Draws the card in this browser. html-to-image fetches each picture
+// again while exporting, and quietly leaves out any it can't get, so copy
+// the photo the preview already loaded straight into the card first.
+async function renderInBrowser(poster: HTMLElement): Promise<string> {
+  const img = poster.querySelector<HTMLImageElement>("img[data-poster-photo]");
+  if (img && !img.src.startsWith("data:")) {
+    img.src = await urlToDataUrl(img.src);
+    await img.decode();
+  }
+  return toJpeg(poster, {
+    width: POSTER_WIDTH,
+    height: POSTER_HEIGHT,
+    pixelRatio: 1,
+    quality: 0.95,
+    style: { transform: "none" },
+  });
 }
 
 function clampPercent(n: number): number {
