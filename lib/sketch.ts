@@ -208,6 +208,21 @@ const CITIES: Record<string, Landmarks> = {
         attenborough(880, 340),
       ].join(""),
   },
+  croydon: {
+    place: "Croydon",
+    // A London Trams Variobahn in front of Croydon's towers.
+    draw: () =>
+      [
+        townHallClock(120, 330),
+        no1Croydon(370, 380),
+        tenDegrees(560, 600),
+        tenDegrees(660, 520),
+        block(760, 140, 250, true),
+        block(930, 110, 170, true),
+        tramWire(),
+        variobahn(-40, 900),
+      ].join(""),
+  },
   brighton: {
     place: "Brighton",
     // West to east: the i360, the Royal Pavilion, the Palace Pier.
@@ -249,6 +264,7 @@ const CITY_WORDS: [RegExp, string][] = [
   [/\bbirmingham\b/i, "birmingham"],
   [/\bcardiff\b/i, "cardiff"],
   [/\bbristol\b/i, "bristol"],
+  [/\bcroydon\b/i, "croydon"],
 ];
 
 export type Sketch = {
@@ -1318,6 +1334,102 @@ function attenborough(cx: number, h: number): string {
 }
 
 
+
+// ---------- Croydon ----------
+
+const TRAM_GREEN = "#8CCB2E";
+const TRAM_BLUE = "#3640A8";
+const TRAM_WHITE = "#ECECE6";
+const TRAM_GLASS = "#262A30";
+// Height of the overhead wire the pantograph touches.
+const WIRE_Y = G - 230;
+
+// A London Trams Variobahn seen side-on, heading right: lime green roof
+// edge and nose, pale grey sides with a long dark window band and a thin
+// green stripe, a deep blue skirt hiding the wheels, a raked windscreen
+// and a single-arm pantograph up to the wire. The rear runs off the card.
+function variobahn(x0: number, front: number): string {
+  const roof = G - 150;
+  const floor = G - 1;
+  const nose = front + 26;
+  const body = `M ${x0} ${floor} L ${x0} ${roof} L ${front - 40} ${roof} Q ${front - 6} ${roof} ${front + 8} ${roof + 30} L ${nose} ${G - 52} Q ${nose + 4} ${floor} ${front} ${floor} Z`;
+  let out = path(body, TRAM_WHITE);
+  // Lime green roof edge.
+  out += rect(x0, roof, front - 40 - x0, 16, TRAM_GREEN);
+  // The long window band, broken at the articulation joints.
+  const joints = [x0 + 230, x0 + 470, x0 + 710];
+  out += rect(x0, roof + 26, front - 120 - x0, 54, TRAM_GLASS);
+  // Thin green stripe and the blue skirt, then the green nose wrapping
+  // round the front over their ends.
+  out += rect(x0, G - 62, front - 58 - x0, 7, TRAM_GREEN);
+  out += rect(x0, G - 42, front - 58 - x0, floor - (G - 42), TRAM_BLUE);
+  out += path(`M ${front - 90} ${roof} L ${front - 40} ${roof} Q ${front - 6} ${roof} ${front + 8} ${roof + 30} L ${nose} ${G - 52} Q ${nose + 4} ${floor} ${front} ${floor} L ${front - 60} ${floor} L ${front - 70} ${G - 60} Z`, TRAM_GREEN);
+  // Raked windscreen with the destination display at its top.
+  out += path(`M ${front - 116} ${roof + 26} L ${front - 30} ${roof + 26} Q ${front - 2} ${roof + 30} ${front + 10} ${roof + 56} L ${front + 18} ${G - 66} L ${front - 116} ${G - 66} Z`, TRAM_GLASS);
+  out += rect(front - 92, roof + 32, 66, 10, "#F28C28");
+  // Doors: double, glazed, one in each section and one just behind the cab.
+  for (const dx of [x0 + 110, x0 + 350, x0 + 590, front - 200]) {
+    out += rect(dx, roof + 22, 64, floor - roof - 26, "#C9C9C2");
+    out += rect(dx + 5, roof + 30, 25, 74, TRAM_GLASS) + rect(dx + 34, roof + 30, 25, 74, TRAM_GLASS);
+  }
+  // Articulation joints: dark rubber bellows between the sections.
+  for (const jx of joints) out += rect(jx, roof + 4, 6, floor - roof - 6, "#1B1F25");
+  // Headlight, and the bogies just showing under the skirt.
+  out += circle(front + 4, G - 34, 5, "#FFE9A8");
+  for (const bx of [x0 + 60, x0 + 300, x0 + 540, front - 110]) out += rect(bx, floor - 2, 70, 10, NEAR);
+  // Single-arm pantograph on the roof of the second section.
+  const px = x0 + 270;
+  out += rect(px - 30, roof - 10, 60, 10, NEAR);
+  out += stroke(`M ${px - 20} ${roof - 10} L ${px + 30} ${roof - 50} L ${px - 10} ${WIRE_Y + 4}`, 5);
+  out += rect(px - 34, WIRE_Y, 48, 6, NEAR);
+  return out;
+}
+
+// The overhead line, held up by poles with bracket arms.
+function tramWire(): string {
+  let out = line(0, WIRE_Y, W, WIRE_Y, 2);
+  for (const x of [470, 1050]) {
+    out += rect(x - 5, WIRE_Y - 60, 10, G - WIRE_Y + 60);
+    const arm = x + 40 < W ? 40 : -40;
+    out += line(x, WIRE_Y - 50, x + arm, WIRE_Y - 2, 3) + line(x, WIRE_Y - 20, x + arm, WIRE_Y - 2, 2);
+  }
+  return out;
+}
+
+// No. 1 Croydon, the "50p building": chamfered square floors, every
+// other one turned 45°, so its outline steps wide, narrow, wide all the
+// way up like a stack of coins.
+function no1Croydon(cx: number, h: number): string {
+  const tiers = 16;
+  const tierH = h / tiers;
+  let out = "";
+  for (let i = 0; i < tiers; i++) {
+    const w = i % 2 === 0 ? 150 : 124;
+    const y = G - (i + 1) * tierH;
+    out += rect(cx - w / 2, y, w, tierH + 1, NEAR, ` rx="6"`);
+    out += rect(cx - w / 2 + 8, y + tierH * 0.3, w - 16, tierH * 0.4, CUT, ` opacity="0.2"`);
+  }
+  return out;
+}
+
+// One of the Ten Degrees towers: tall, slim, flat-topped.
+function tenDegrees(cx: number, h: number): string {
+  return rect(cx - 44, G - h, 88, h) + rect(cx - 48, G - h, 96, 10) + windows(cx - 32, G - h + 26, 64, h - 40, 6, 10);
+}
+
+// Croydon Town Hall's clock tower, with its lantern top.
+function townHallClock(cx: number, h: number): string {
+  const top = G - h;
+  return [
+    rect(cx - 110, G - 120, 220, 120),
+    windows(cx - 95, G - 104, 190, 90, 8, 18),
+    rect(cx - 30, top + 90, 60, h - 90),
+    clockFace(cx, top + 130, 20),
+    rect(cx - 22, top + 40, 44, 52),
+    poly([[cx - 26, top + 42], [cx, top], [cx + 26, top + 42]]),
+    rect(cx - 2, top - 24, 4, 26),
+  ].join("");
+}
 
 // ---------- made-up skylines ----------
 
