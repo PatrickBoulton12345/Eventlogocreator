@@ -293,7 +293,9 @@ export function sketchFor(chapter: string): Sketch | null {
   return {
     place: key ? CITIES[key].place : place,
     landmarks: !!key,
-    url: `/api/sketch?chapter=${encodeURIComponent(chapter.trim())}`,
+    // The drawing's fingerprint is part of the address, so browsers and
+    // the CDN fetch it afresh whenever the drawing changes.
+    url: `/api/sketch?chapter=${encodeURIComponent(chapter.trim())}&v=${hash(sketchSvg(chapter)).toString(36)}`,
   };
 }
 
